@@ -1,0 +1,26 @@
+[package]
+name = "audio_vis"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+cortex-m-rt = "0.7.5"
+defmt = "1.1.0"
+defmt-rtt = "1.2.0"
+embassy-executor = { version = "0.10.0", features = ["platform-cortex-m", "executor-thread", "executor-interrupt", "defmt"] }
+embassy-rp = { version = "0.10.0", features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl", "rp235xa", "binary-info"] }
+embassy-sync = "0.8.0"
+embassy-time = "0.5.1"
+microfft = "0.6.0"
+micromath = "2.1.0"
+panic-probe = { version = "1.0.0", features = ["print-defmt"] }
+
+[profile.release]
+# Enable generation of debug symbols even on release builds
+debug = true
+
+[[bin]]
+name = "audio_vis"
+test = false
+doctest = false
+bench = false
