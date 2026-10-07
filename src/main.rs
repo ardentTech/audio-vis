@@ -17,6 +17,7 @@ use embassy_time::{Duration, Ticker};
 use crate::display::{DISPLAY_ROWS, DISPLAY_FRAME_CHANNEL, Display, DISPLAY_COLUMNS};
 
 const MIC_SAMPLE_BLOCK_SIZE: usize = 32;
+const ADC_LEVELS: i32 = 4096;
 
 static MIC_SAMPLES_CHANNEL: embassy_sync::channel::Channel<CriticalSectionRawMutex, [f32; MIC_SAMPLE_BLOCK_SIZE], 64> = embassy_sync::channel::Channel::new();
 
@@ -46,7 +47,7 @@ async fn mic_read_task(
     let mut ticker = Ticker::every(Duration::from_millis(100));
     let mut buf = [0_u16; MIC_SAMPLE_BLOCK_SIZE];
     // TODO sample at 2x highest filter frequency to account for Nyquist
-    let div = 479; // 100kHz sample rate (48Mhz / 100kHz - 1)
+    let div = 999; // 48kHz sample rate (48Mhz / 48kHz - 1)
     let mut samples = [0.0; MIC_SAMPLE_BLOCK_SIZE];
 
     loop {
@@ -74,7 +75,7 @@ async fn mic_samples_processing_task(
 
         let mut amplitudes: [u32; 16] = [0; 16];
         spectrum.iter().enumerate().for_each(|(i, v)| {
-            amplitudes[i] = map_range(v.l1_norm() as i32, 0, 2000, 0, DISPLAY_ROWS as i32) as u32 // TODO so many type casts
+            amplitudes[i] = map_range(v.l1_norm() as i32, 0, ADC_LEVELS, 0, DISPLAY_ROWS as i32) as u32 // TODO so many type casts
         });
         //info!("amplitudes: {:?}", amplitudes);
 
