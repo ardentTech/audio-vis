@@ -22,7 +22,7 @@ impl<'a> Display<'a> {
     pub(crate) async fn render(&mut self) {
         for (ri, row) in self.buffer.iter().enumerate() {
             self.rows[ri].set_high();
-            Timer::after_nanos(250).await;
+            //Timer::after_nanos(250).await; // TODO why?
             for i in (0..DISPLAY_COLUMNS).rev() {
                 if ((row >> i) & 1) == 1 {
                     self.cols[i].set_high();
@@ -30,9 +30,9 @@ impl<'a> Display<'a> {
                     self.cols[i].set_low();
                 }
             }
-            Timer::after_millis(1).await; // TODO figure out this value
+            Timer::after_millis(4).await; // ~4.16ms for each row (TODO more specific value?)
             self.rows[ri].set_low();
-            Timer::after_nanos(250).await;
+            //Timer::after_nanos(250).await; // TODO why?
         }
     }
 

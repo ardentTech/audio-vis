@@ -44,20 +44,20 @@ async fn mic_read_task(
     mut dma_channel: dma::Channel<'static>,
     mut adc_channel: Channel<'static>,
 ) {
-    let mut ticker = Ticker::every(Duration::from_millis(100));
+    //let mut ticker = Ticker::every(Duration::from_millis(50)); // TODO figure out what to do use here
     let mut buf = [0_u16; MIC_SAMPLE_BLOCK_SIZE];
-    // TODO sample at 2x highest filter frequency to account for Nyquist
-    let div = 999; // 48kHz sample rate (48Mhz / 48kHz - 1)
+    //let div = 999; // 48kHz sample rate (48Mhz / 48kHz - 1)
+    let div = 4799; // 10kHz sample rate (48Mhz / 10kHz - 1)
     let mut samples = [0.0; MIC_SAMPLE_BLOCK_SIZE];
 
     loop {
         adc.read_many(&mut adc_channel, &mut buf, div, &mut dma_channel).await.unwrap();
         buf[..32].iter().enumerate().for_each(|(i, v)| samples[i] = *v as f32);
-        info!("samples {:?}", samples);
+        //info!("samples {:?}", samples);
         control.send(samples).await;
         buf = [0_u16; MIC_SAMPLE_BLOCK_SIZE]; // TODO is this necessary?
         samples = [0.0; MIC_SAMPLE_BLOCK_SIZE]; // TODO is this necessary?
-        ticker.next().await;
+        //ticker.next().await;
     }
 }
 
@@ -69,18 +69,24 @@ async fn mic_samples_processing_task(
     loop {
         let mut samples = receiver.receive().await;
         let spectrum = microfft::real::rfft_32(&mut samples);
+        // info!("[0]: ({}, {})", spectrum[0].re, spectrum[0].im);
+        // info!("[1]: ({}, {})\n", spectrum[1].re, spectrum[1].im);
         // since the real-valued coefficient at the Nyquist frequency is packed into the
         // imaginary part of the DC bin, it must be cleared before computing the amplitudes
         spectrum[0].im = 0.0;
+        spectrum[0].re = 0.0; // TODO not sure about this
+        //info!("[0]: ({}, {})", spectrum[0].re, spectrum[0].im);
 
         let mut amplitudes: [u32; 16] = [0; 16];
         spectrum.iter().enumerate().for_each(|(i, v)| {
+            //info!("{}: {}", i, v.l1_norm());
             amplitudes[i] = map_range(v.l1_norm() as i32, 0, ADC_LEVELS, 0, DISPLAY_ROWS as i32) as u32 // TODO so many type casts
         });
-        //info!("amplitudes: {:?}", amplitudes);
+        info!("amplitudes: {:?}", amplitudes);
 
         let mut frame = [0u16; 4];
         amplitudes.iter().rev().enumerate().for_each(|(i, v)| {
+            //info!("*v = {}", *v);
             if *v != 0 {
                 for id in (0..*v).rev() {
                     frame[id as usize] += 2u16.pow(i as u32);
@@ -88,6 +94,7 @@ async fn mic_samples_processing_task(
             }
         });
 
+        info!("frame: {}\n", frame);
         sender.send(frame).await
     }
 }
