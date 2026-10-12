@@ -17,6 +17,8 @@ use embassy_time::{Duration, Ticker};
 use crate::display::{DISPLAY_ROWS, DISPLAY_FRAME_CHANNEL, Display, DISPLAY_COLUMNS};
 
 const MIC_SAMPLE_BLOCK_SIZE: usize = 32;
+const MIC_SAMPLE_BATCH_SIZE: usize = 20;
+const ADC_DIV: u16 = 4799; // 10kHz sample rate (48Mhz / 10kHz - 1)
 const ADC_LEVELS: i32 = 4096;
 
 static MIC_SAMPLES_CHANNEL: embassy_sync::channel::Channel<CriticalSectionRawMutex, [f32; MIC_SAMPLE_BLOCK_SIZE], 64> = embassy_sync::channel::Channel::new();
@@ -44,20 +46,29 @@ async fn mic_read_task(
     mut dma_channel: dma::Channel<'static>,
     mut adc_channel: Channel<'static>,
 ) {
-    //let mut ticker = Ticker::every(Duration::from_millis(50)); // TODO figure out what to do use here
     let mut buf = [0_u16; MIC_SAMPLE_BLOCK_SIZE];
-    //let div = 999; // 48kHz sample rate (48Mhz / 48kHz - 1)
-    let div = 4799; // 10kHz sample rate (48Mhz / 10kHz - 1)
+    let mut raw = [[0_u16; MIC_SAMPLE_BLOCK_SIZE]; MIC_SAMPLE_BATCH_SIZE];
     let mut samples = [0.0; MIC_SAMPLE_BLOCK_SIZE];
 
     loop {
-        adc.read_many(&mut adc_channel, &mut buf, div, &mut dma_channel).await.unwrap();
-        buf[..32].iter().enumerate().for_each(|(i, v)| samples[i] = *v as f32);
-        //info!("samples {:?}", samples);
+        for i in 0..MIC_SAMPLE_BATCH_SIZE {
+            adc.read_many(&mut adc_channel, &mut buf, ADC_DIV, &mut dma_channel).await.unwrap();
+            raw[i] = buf;
+        }
+        for i in 0..MIC_SAMPLE_BLOCK_SIZE {
+            let mut sum = 0;
+            for j in 0..MIC_SAMPLE_BATCH_SIZE {
+                sum += raw[j][i];
+            }
+            samples[i] = sum as f32 / MIC_SAMPLE_BATCH_SIZE as f32;
+        }
+
         control.send(samples).await;
-        buf = [0_u16; MIC_SAMPLE_BLOCK_SIZE]; // TODO is this necessary?
-        samples = [0.0; MIC_SAMPLE_BLOCK_SIZE]; // TODO is this necessary?
-        //ticker.next().await;
+
+        // TODO are these necessary?
+        buf = [0_u16; MIC_SAMPLE_BLOCK_SIZE];
+        samples = [0.0; MIC_SAMPLE_BLOCK_SIZE];
+        raw = [[0_u16; MIC_SAMPLE_BLOCK_SIZE]; MIC_SAMPLE_BATCH_SIZE];
     }
 }
 
@@ -82,7 +93,7 @@ async fn mic_samples_processing_task(
             //info!("{}: {}", i, v.l1_norm());
             amplitudes[i] = map_range(v.l1_norm() as i32, 0, ADC_LEVELS, 0, DISPLAY_ROWS as i32) as u32 // TODO so many type casts
         });
-        info!("amplitudes: {:?}", amplitudes);
+        //info!("amplitudes: {:?}", amplitudes);
 
         let mut frame = [0u16; 4];
         amplitudes.iter().rev().enumerate().for_each(|(i, v)| {
@@ -94,7 +105,7 @@ async fn mic_samples_processing_task(
             }
         });
 
-        info!("frame: {}\n", frame);
+        //info!("frame: {}\n", frame);
         sender.send(frame).await
     }
 }
