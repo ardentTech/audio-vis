@@ -17,9 +17,11 @@ use embassy_time::{Duration, Ticker};
 use crate::display::{DISPLAY_ROWS, DISPLAY_FRAME_CHANNEL, Display, DISPLAY_COLUMNS};
 
 const MIC_SAMPLE_BLOCK_SIZE: usize = 32;
-const MIC_SAMPLE_BATCH_SIZE: usize = 20;
+const MIC_SAMPLE_BATCH_SIZE: usize = 20; // TODO dial this in
 const ADC_DIV: u16 = 4799; // 10kHz sample rate (48Mhz / 10kHz - 1)
-const ADC_LEVELS: i32 = 4096;
+
+//const ADC_LEVELS: i32 = 4096;
+const ADC_LEVELS: i32 = 3250; // TODO dial this in
 
 static MIC_SAMPLES_CHANNEL: embassy_sync::channel::Channel<CriticalSectionRawMutex, [f32; MIC_SAMPLE_BLOCK_SIZE], 64> = embassy_sync::channel::Channel::new();
 
@@ -79,19 +81,18 @@ async fn mic_samples_processing_task(
 ) {
     loop {
         let mut samples = receiver.receive().await;
+        info!("samples: {}", samples);
         let spectrum = microfft::real::rfft_32(&mut samples);
-        // info!("[0]: ({}, {})", spectrum[0].re, spectrum[0].im);
-        // info!("[1]: ({}, {})\n", spectrum[1].re, spectrum[1].im);
         // since the real-valued coefficient at the Nyquist frequency is packed into the
         // imaginary part of the DC bin, it must be cleared before computing the amplitudes
         spectrum[0].im = 0.0;
         spectrum[0].re = 0.0; // TODO not sure about this
-        //info!("[0]: ({}, {})", spectrum[0].re, spectrum[0].im);
 
         let mut amplitudes: [u32; 16] = [0; 16];
         spectrum.iter().enumerate().for_each(|(i, v)| {
             //info!("{}: {}", i, v.l1_norm());
-            amplitudes[i] = map_range(v.l1_norm() as i32, 0, ADC_LEVELS, 0, DISPLAY_ROWS as i32) as u32 // TODO so many type casts
+            amplitudes[i] = map_range(v.l1_norm() as i32, 0, ADC_LEVELS, 0, DISPLAY_ROWS as i32) as u32; // TODO so many type casts
+            //info!("{}: {}", v.l1_norm(), amplitudes[i]);
         });
         //info!("amplitudes: {:?}", amplitudes);
 
