@@ -1,29 +1,37 @@
 #![no_std]
 #![no_main]
 
-mod display;
-
-use defmt::{info, unwrap};
+use defmt::{debug, info, unwrap};
 #[allow(unused_imports)]
 use {defmt_rtt as _, panic_probe as _};
 use embassy_executor::Spawner;
 use embassy_rp::adc::{Adc, Async, Channel, Config, InterruptHandler};
 use embassy_rp::{bind_interrupts, dma};
-use embassy_rp::gpio::{Level, Output, Pull};
+use embassy_rp::gpio::Pull;
 use embassy_rp::peripherals::DMA_CH0;
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
-use embassy_sync::channel::{Receiver, Sender};
-use embassy_time::{Duration, Ticker};
-use crate::display::{DISPLAY_ROWS, DISPLAY_FRAME_CHANNEL, Display, DISPLAY_COLUMNS};
+use embassy_sync::channel;
+use embassy_sync::signal::Signal;
 
-const MIC_SAMPLE_BLOCK_SIZE: usize = 32;
+// TODO this is a command... need trait?
+struct ProcessSamples([f32; MIC_SAMPLE_BLOCK_SIZE]);
+
+enum Event {
+    SamplesRead([f32; MIC_SAMPLE_BLOCK_SIZE]),
+    SamplesProcessed,
+}
+
+const MIC_SAMPLE_BLOCK_SIZE: usize = 128;
 const MIC_SAMPLE_BATCH_SIZE: usize = 20; // TODO dial this in
 const ADC_DIV: u16 = 4799; // 10kHz sample rate (48Mhz / 10kHz - 1)
+const DISPLAY_ROWS: usize = 32;
 
-//const ADC_LEVELS: i32 = 4096;
-const ADC_LEVELS: i32 = 3250; // TODO dial this in
+const ADC_LEVELS: i32 = 3250; // TODO dial this in (max is 4096)
 
-static MIC_SAMPLES_CHANNEL: embassy_sync::channel::Channel<CriticalSectionRawMutex, [f32; MIC_SAMPLE_BLOCK_SIZE], 64> = embassy_sync::channel::Channel::new();
+/// Channel for events from worker tasks to the orchestrator
+static EVENT_CHANNEL: channel::Channel<CriticalSectionRawMutex, Event, 10> = channel::Channel::new();
+static PROCESS_SAMPLES_HANDLER: Signal<CriticalSectionRawMutex, ProcessSamples> = Signal::new();
+
 
 bind_interrupts!(struct Irqs {
     ADC_IRQ_FIFO => InterruptHandler;
@@ -42,12 +50,13 @@ fn map_range(a: i32, in_min: i32, in_max: i32, out_min: i32, out_max: i32) -> i3
 }
 
 #[embassy_executor::task]
-async fn mic_read_task(
+async fn samples_read_task(
     mut adc: Adc<'static, Async>,
-    control: Sender<'static, CriticalSectionRawMutex, [f32; MIC_SAMPLE_BLOCK_SIZE], 64>,
     mut dma_channel: dma::Channel<'static>,
     mut adc_channel: Channel<'static>,
 ) {
+    debug!("samples_read_task");
+    let sender = EVENT_CHANNEL.sender();
     let mut buf = [0_u16; MIC_SAMPLE_BLOCK_SIZE];
     let mut raw = [[0_u16; MIC_SAMPLE_BLOCK_SIZE]; MIC_SAMPLE_BATCH_SIZE];
     let mut samples = [0.0; MIC_SAMPLE_BLOCK_SIZE];
@@ -65,7 +74,7 @@ async fn mic_read_task(
             samples[i] = sum as f32 / MIC_SAMPLE_BATCH_SIZE as f32;
         }
 
-        control.send(samples).await;
+        sender.send(Event::SamplesRead(samples)).await;
 
         // TODO are these necessary?
         buf = [0_u16; MIC_SAMPLE_BLOCK_SIZE];
@@ -75,20 +84,20 @@ async fn mic_read_task(
 }
 
 #[embassy_executor::task]
-async fn mic_samples_processing_task(
-    receiver: Receiver<'static, CriticalSectionRawMutex, [f32; MIC_SAMPLE_BLOCK_SIZE], 64>,
-    sender: Sender<'static, CriticalSectionRawMutex, [u16; DISPLAY_ROWS], 64>,
-) {
+async fn samples_processing_task() {
+    debug!("samples_processing_task");
+    let sender = EVENT_CHANNEL.sender();
+
     loop {
-        let mut samples = receiver.receive().await;
-        info!("samples: {}", samples);
-        let spectrum = microfft::real::rfft_32(&mut samples);
+        let mut samples = PROCESS_SAMPLES_HANDLER.wait().await;
+        info!("samples: {}", samples.0);
+        let spectrum = microfft::real::rfft_128(&mut samples.0);
         // since the real-valued coefficient at the Nyquist frequency is packed into the
         // imaginary part of the DC bin, it must be cleared before computing the amplitudes
         spectrum[0].im = 0.0;
         spectrum[0].re = 0.0; // TODO not sure about this
 
-        let mut amplitudes: [u32; 16] = [0; 16];
+        let mut amplitudes: [u32; 64] = [0; 64];
         spectrum.iter().enumerate().for_each(|(i, v)| {
             //info!("{}: {}", i, v.l1_norm());
             amplitudes[i] = map_range(v.l1_norm() as i32, 0, ADC_LEVELS, 0, DISPLAY_ROWS as i32) as u32; // TODO so many type casts
@@ -96,34 +105,38 @@ async fn mic_samples_processing_task(
         });
         //info!("amplitudes: {:?}", amplitudes);
 
-        let mut frame = [0u16; 4];
-        amplitudes.iter().rev().enumerate().for_each(|(i, v)| {
-            //info!("*v = {}", *v);
-            if *v != 0 {
-                for id in (0..*v).rev() {
-                    frame[id as usize] += 2u16.pow(i as u32);
-                }
-            }
-        });
+        // let mut frame = [0u16; 4];
+        // amplitudes.iter().rev().enumerate().for_each(|(i, v)| {
+        //     //info!("*v = {}", *v);
+        //     if *v != 0 {
+        //         for id in (0..*v).rev() {
+        //             frame[id as usize] += 2u16.pow(i as u32);
+        //         }
+        //     }
+        // });
 
         //info!("frame: {}\n", frame);
-        sender.send(frame).await
+        //sender.send(frame).await
+        sender.send(Event::SamplesProcessed).await;
     }
 }
 
 #[embassy_executor::task]
-async fn display_task(
-    mut display: Display<'static>,
-    receiver: Receiver<'static, CriticalSectionRawMutex, [u16; DISPLAY_ROWS], 64>,
-) {
-    let mut ticker = Ticker::every(Duration::from_hz(60));
+async fn orchestration_task() {
+    debug!("orchestration_task");
+    let receiver = EVENT_CHANNEL.receiver();
+
     loop {
-        display.render().await;
-        if !receiver.is_empty() {
-            let frame =  receiver.receive().await;
-            display.update(frame);
+        // Do nothing until we receive any event
+        match receiver.receive().await {
+            Event::SamplesRead(samples) => {
+                debug!("samples read");
+                PROCESS_SAMPLES_HANDLER.signal(ProcessSamples(samples));
+            }
+            Event::SamplesProcessed => {
+                debug!("samples processed");
+            }
         }
-        ticker.next().await;
     }
 }
 
@@ -131,52 +144,11 @@ async fn display_task(
 async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
 
-    let r0 = Output::new(p.PIN_16, Level::Low);
-    let r1 = Output::new(p.PIN_17, Level::Low);
-    let r2 = Output::new(p.PIN_18, Level::Low);
-    let r3 = Output::new(p.PIN_19, Level::Low);
-
-    let c0 = Output::new(p.PIN_8, Level::Low);
-    let c1 = Output::new(p.PIN_9, Level::Low);
-    let c2 = Output::new(p.PIN_10, Level::Low);
-    let c3 = Output::new(p.PIN_11, Level::Low);
-    let c4 = Output::new(p.PIN_12, Level::Low);
-    let c5 = Output::new(p.PIN_13, Level::Low);
-    let c6 = Output::new(p.PIN_14, Level::Low);
-    let c7 = Output::new(p.PIN_15, Level::Low);
-
-    let c8 = Output::new(p.PIN_0, Level::Low);
-    let c9 = Output::new(p.PIN_1, Level::Low);
-    let c10 = Output::new(p.PIN_2, Level::Low);
-    let c11 = Output::new(p.PIN_3, Level::Low);
-    let c12 = Output::new(p.PIN_4, Level::Low);
-    let c13 = Output::new(p.PIN_5, Level::Low);
-    let c14 = Output::new(p.PIN_6, Level::Low);
-    let c15 = Output::new(p.PIN_7, Level::Low);
-
-    let rows: [Output; DISPLAY_ROWS] = [r0, r1, r2, r3];
-    let columns: [Output; DISPLAY_COLUMNS] = [c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15];
-
-    let display = Display::new(rows, columns);
-
-    spawner.spawn(unwrap!(display_task(
-        display,
-        DISPLAY_FRAME_CHANNEL.receiver(),
-    )));
-
-    spawner.spawn(unwrap!(mic_samples_processing_task(
-        MIC_SAMPLES_CHANNEL.receiver(),
-        DISPLAY_FRAME_CHANNEL.sender(),
-    )));
+    spawner.spawn(unwrap!(orchestration_task()));
+    spawner.spawn(unwrap!(samples_processing_task()));
 
     let adc = Adc::new(p.ADC, Irqs, Config::default());
     let dma_ch = dma::Channel::new(p.DMA_CH0, Irqs);
     let pin = Channel::new_pin(p.PIN_26, Pull::Up);
-
-    spawner.spawn(unwrap!(mic_read_task(
-        adc,
-        MIC_SAMPLES_CHANNEL.sender(),
-        dma_ch,
-        pin,
-    )));
+    spawner.spawn(unwrap!(samples_read_task(adc, dma_ch, pin,)));
 }
