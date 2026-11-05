@@ -35,7 +35,7 @@ static PROCESS_SAMPLES_HANDLER: Signal<CriticalSectionRawMutex, ProcessSamples> 
 
 bind_interrupts!(struct Irqs {
     ADC_IRQ_FIFO => InterruptHandler;
-    DMA_IRQ_0 => dma::InterruptHandler<DMA_CH0>;
+    //DMA_IRQ_0 => dma::InterruptHandler<DMA_CH0>;
 });
 
 // TODO any harm in using i32s here?
@@ -52,34 +52,19 @@ fn map_range(a: i32, in_min: i32, in_max: i32, out_min: i32, out_max: i32) -> i3
 #[embassy_executor::task]
 async fn samples_read_task(
     mut adc: Adc<'static, Async>,
-    mut dma_channel: dma::Channel<'static>,
     mut adc_channel: Channel<'static>,
 ) {
     debug!("samples_read_task");
     let sender = EVENT_CHANNEL.sender();
-    let mut buf = [0_u16; MIC_SAMPLE_BLOCK_SIZE];
-    let mut raw = [[0_u16; MIC_SAMPLE_BLOCK_SIZE]; MIC_SAMPLE_BATCH_SIZE];
     let mut samples = [0.0; MIC_SAMPLE_BLOCK_SIZE];
 
     loop {
-        for i in 0..MIC_SAMPLE_BATCH_SIZE {
-            adc.read_many(&mut adc_channel, &mut buf, ADC_DIV, &mut dma_channel).await.unwrap();
-            raw[i] = buf;
-        }
         for i in 0..MIC_SAMPLE_BLOCK_SIZE {
-            let mut sum = 0;
-            for j in 0..MIC_SAMPLE_BATCH_SIZE {
-                sum += raw[j][i];
-            }
-            samples[i] = sum as f32 / MIC_SAMPLE_BATCH_SIZE as f32;
+            samples[i] = adc.read(&mut adc_channel).await.unwrap() as f32;
         }
-
         sender.send(Event::SamplesRead(samples)).await;
-
-        // TODO are these necessary?
-        buf = [0_u16; MIC_SAMPLE_BLOCK_SIZE];
         samples = [0.0; MIC_SAMPLE_BLOCK_SIZE];
-        raw = [[0_u16; MIC_SAMPLE_BLOCK_SIZE]; MIC_SAMPLE_BATCH_SIZE];
+        // TODO might want to slow this down or avg samples together...
     }
 }
 
@@ -99,24 +84,8 @@ async fn samples_processing_task() {
 
         let mut amplitudes: [u32; 64] = [0; 64];
         spectrum.iter().enumerate().for_each(|(i, v)| {
-            //info!("{}: {}", i, v.l1_norm());
             amplitudes[i] = map_range(v.l1_norm() as i32, 0, ADC_LEVELS, 0, DISPLAY_ROWS as i32) as u32; // TODO so many type casts
-            //info!("{}: {}", v.l1_norm(), amplitudes[i]);
         });
-        //info!("amplitudes: {:?}", amplitudes);
-
-        // let mut frame = [0u16; 4];
-        // amplitudes.iter().rev().enumerate().for_each(|(i, v)| {
-        //     //info!("*v = {}", *v);
-        //     if *v != 0 {
-        //         for id in (0..*v).rev() {
-        //             frame[id as usize] += 2u16.pow(i as u32);
-        //         }
-        //     }
-        // });
-
-        //info!("frame: {}\n", frame);
-        //sender.send(frame).await
         sender.send(Event::SamplesProcessed).await;
     }
 }
@@ -127,7 +96,6 @@ async fn orchestration_task() {
     let receiver = EVENT_CHANNEL.receiver();
 
     loop {
-        // Do nothing until we receive any event
         match receiver.receive().await {
             Event::SamplesRead(samples) => {
                 debug!("samples read");
@@ -148,7 +116,6 @@ async fn main(spawner: Spawner) {
     spawner.spawn(unwrap!(samples_processing_task()));
 
     let adc = Adc::new(p.ADC, Irqs, Config::default());
-    let dma_ch = dma::Channel::new(p.DMA_CH0, Irqs);
     let pin = Channel::new_pin(p.PIN_26, Pull::Up);
-    spawner.spawn(unwrap!(samples_read_task(adc, dma_ch, pin,)));
+    spawner.spawn(unwrap!(samples_read_task(adc, pin)));
 }
