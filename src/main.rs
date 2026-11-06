@@ -17,7 +17,7 @@ use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_sync::channel;
 use embassy_sync::signal::Signal;
 use rp_hub75::{on_dma_irq, Hub75Pins16, Hub75, Hub75Config, hub75_descriptors};
-use crate::display::{Fb, PANEL_CLOCK_HZ};
+use crate::display::{Fb, PANEL_CLOCK_HZ, PANEL_HEIGHT};
 
 /// The driver's frame-boundary work, in the DMA interrupt.
 struct DmaIrqHandler;
@@ -39,18 +39,17 @@ macro_rules! mk_static {
     }};
 }
 
+const ADC_RESOLUTION: i32 = 4096;
+const MIC_SAMPLE_BLOCK_SIZE: usize = 128;
+const READS_PER_SAMPLE: usize = 16;
+
 // TODO this is a command... need trait?
 struct ProcessSamples([f32; MIC_SAMPLE_BLOCK_SIZE]);
 
 enum Event {
     SamplesRead([f32; MIC_SAMPLE_BLOCK_SIZE]),
-    SamplesProcessed,
+    SamplesProcessed([u32; PANEL_HEIGHT * 2]),
 }
-
-const MIC_SAMPLE_BLOCK_SIZE: usize = 128;
-const DISPLAY_ROWS: usize = 32;
-
-const ADC_LEVELS: i32 = 3250; // TODO dial this in (max is 4096)
 
 /// Channel for events from worker tasks to the orchestrator
 static EVENT_CHANNEL: channel::Channel<CriticalSectionRawMutex, Event, 10> = channel::Channel::new();
@@ -85,11 +84,14 @@ async fn samples_read_task(
 
     loop {
         for i in 0..MIC_SAMPLE_BLOCK_SIZE {
-            samples[i] = adc.read(&mut adc_channel).await.unwrap() as f32;
+            let mut sum = 0.0f32;
+            for _ in 0..READS_PER_SAMPLE {
+                sum += adc.read(&mut adc_channel).await.unwrap() as f32;
+            }
+            samples[i] = sum / READS_PER_SAMPLE as f32;
         }
         sender.send(Event::SamplesRead(samples)).await;
         samples = [0.0; MIC_SAMPLE_BLOCK_SIZE];
-        // TODO might want to slow this down or avg samples together...
     }
 }
 
@@ -100,18 +102,18 @@ async fn samples_processing_task() {
 
     loop {
         let mut samples = PROCESS_SAMPLES_HANDLER.wait().await;
-        info!("samples: {}", samples.0);
+        //info!("samples: {}", samples.0);
         let spectrum = microfft::real::rfft_128(&mut samples.0);
         // since the real-valued coefficient at the Nyquist frequency is packed into the
         // imaginary part of the DC bin, it must be cleared before computing the amplitudes
         spectrum[0].im = 0.0;
         spectrum[0].re = 0.0; // TODO not sure about this
 
-        let mut amplitudes: [u32; 64] = [0; 64];
+        let mut amplitudes: [u32; PANEL_HEIGHT * 2] = [0; PANEL_HEIGHT * 2];
         spectrum.iter().enumerate().for_each(|(i, v)| {
-            amplitudes[i] = map_range(v.l1_norm() as i32, 0, ADC_LEVELS, 0, DISPLAY_ROWS as i32) as u32; // TODO so many type casts
+            amplitudes[i] = map_range(v.l1_norm() as i32, 0, ADC_RESOLUTION, 0, PANEL_HEIGHT as i32) as u32; // TODO so many type casts
         });
-        sender.send(Event::SamplesProcessed).await;
+        sender.send(Event::SamplesProcessed(amplitudes)).await;
     }
 }
 
@@ -123,11 +125,10 @@ async fn orchestration_task() {
     loop {
         match receiver.receive().await {
             Event::SamplesRead(samples) => {
-                debug!("samples read");
                 PROCESS_SAMPLES_HANDLER.signal(ProcessSamples(samples));
             }
-            Event::SamplesProcessed => {
-                debug!("samples processed");
+            Event::SamplesProcessed(samples) => {
+                debug!("samples processed: {:?}", samples);
             }
         }
     }
