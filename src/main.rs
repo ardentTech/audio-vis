@@ -8,16 +8,18 @@ use defmt::{debug, info, unwrap};
 use {defmt_rtt as _, panic_probe as _};
 use embassy_executor::Spawner;
 use embassy_rp::adc::{Adc, Async, Channel, Config, InterruptHandler};
-use embassy_rp::{bind_interrupts, clocks, pac, pio};
+use embassy_rp::{bind_interrupts, clocks, pac, pio, Peri};
 use embassy_rp::gpio::Pull;
 use embassy_rp::interrupt::typelevel::Handler;
-use embassy_rp::peripherals::PIO0;
+use embassy_rp::peripherals::{DMA_CH0, DMA_CH1, PIO0};
 use embassy_rp::pio::Pio;
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_sync::channel;
 use embassy_sync::signal::Signal;
-use rp_hub75::{on_dma_irq, Hub75Pins16, Hub75, Hub75Config, hub75_descriptors};
-use crate::display::{Fb, PANEL_CLOCK_HZ, PANEL_HEIGHT};
+use embedded_graphics::geometry::Point;
+use embedded_graphics::pixelcolor::Rgb888;
+use rp_hub75::{on_dma_irq, Hub75Pins16, Hub75, Hub75Config, hub75_descriptors, Hub75Swap};
+use crate::display::{Fb, PANEL_CLOCK_HZ, PANEL_HEIGHT, PANEL_WIDTH};
 
 /// The driver's frame-boundary work, in the DMA interrupt.
 struct DmaIrqHandler;
@@ -45,6 +47,7 @@ const READS_PER_SAMPLE: usize = 16;
 
 // TODO this is a command... need trait?
 struct ProcessSamples([f32; MIC_SAMPLE_BLOCK_SIZE]);
+struct DrawAmplitudes([u32; PANEL_WIDTH]);
 
 enum Event {
     SamplesRead([f32; MIC_SAMPLE_BLOCK_SIZE]),
@@ -54,6 +57,7 @@ enum Event {
 /// Channel for events from worker tasks to the orchestrator
 static EVENT_CHANNEL: channel::Channel<CriticalSectionRawMutex, Event, 10> = channel::Channel::new();
 static PROCESS_SAMPLES_HANDLER: Signal<CriticalSectionRawMutex, ProcessSamples> = Signal::new();
+static DRAW_AMPLITUDES_HANDLER: Signal<CriticalSectionRawMutex, DrawAmplitudes> = Signal::new();
 
 
 bind_interrupts!(struct Irqs {
@@ -118,35 +122,15 @@ async fn samples_processing_task() {
 }
 
 #[embassy_executor::task]
-async fn orchestration_task() {
-    debug!("orchestration_task");
-    let receiver = EVENT_CHANNEL.receiver();
+async fn display_task(
+    pio: Pio<'static, PIO0>,
+    pins: Hub75Pins16,
+    dma_ch0: Peri<'static, DMA_CH0>,
+    dma_ch1: Peri<'static, DMA_CH1>,
+) {
+    debug!("display_task");
 
-    loop {
-        match receiver.receive().await {
-            Event::SamplesRead(samples) => {
-                PROCESS_SAMPLES_HANDLER.signal(ProcessSamples(samples));
-            }
-            Event::SamplesProcessed(samples) => {
-                debug!("samples processed: {:?}", samples);
-            }
-        }
-    }
-}
-
-#[embassy_executor::main]
-async fn main(spawner: Spawner) {
-    let p = embassy_rp::init(Default::default());
-
-    // The PIO is built first: embassy makes a PIO pin from it.
-    let mut pio = Pio::new(p.PIO0, Irqs);
-    let pins = Hub75Pins16::new(
-        &mut pio, p.PIN_0, p.PIN_1, p.PIN_2, p.PIN_3, p.PIN_4, p.PIN_5, p.PIN_6, p.PIN_7, p.PIN_8,
-        p.PIN_9, p.PIN_10,
-        // STB and OE are the word's last two signal bits; the clock is not a
-        // signal at all — the side-set drives it, and it is wired to GP11.
-        p.PIN_12, p.PIN_13, p.PIN_11,
-    );
+    let sender = EVENT_CHANNEL.sender();
 
     // One framebuffer is the panel's at any moment and the other is this loop's;
     // a swap exchanges them.
@@ -158,10 +142,11 @@ async fn main(spawner: Spawner) {
     let fb0_addr = fb0 as *const Fb as usize;
     let fb1_addr = fb1 as *const Fb as usize;
 
+
     let hub75 = Hub75::new(
         pio,
-        p.DMA_CH0,
-        p.DMA_CH1,
+        dma_ch0,
+        dma_ch1,
         pins,
         clocks::clk_sys_freq(),
         Hub75Config::new(pac::Interrupt::DMA_IRQ_0).with_panel_clock_hz(PANEL_CLOCK_HZ),
@@ -170,7 +155,68 @@ async fn main(spawner: Spawner) {
     )
         .expect("failed to start the panel");
 
+    let mut fb = fb1;
+
+    loop {
+        let amplitudes = DRAW_AMPLITUDES_HANDLER.wait().await;
+        draw(fb, amplitudes);
+        match hub75.swap(fb) {
+            Ok(mut swap) => {
+                swap.wait_for_done().await;
+                fb = swap.wait();
+            }
+            Err((_error, returned)) => fb = returned,
+        }
+    }
+}
+
+fn draw(fb: &mut Fb, amplitudes: DrawAmplitudes) {
+    debug!("draw");
+    fb.erase();
+    let blue = Rgb888::new(0, 0, 255);
+    for (col, v) in amplitudes.0.iter().enumerate() {
+        for i in 0..*v {
+            fb.set_pixel(Point::new(col as i32, PANEL_HEIGHT as i32 - i as i32), blue);
+        }
+    }
+
+}
+
+#[embassy_executor::task]
+async fn orchestration_task() {
+    debug!("orchestration_task");
+    let receiver = EVENT_CHANNEL.receiver();
+
+    loop {
+        match receiver.receive().await {
+            Event::SamplesRead(samples) => {
+                PROCESS_SAMPLES_HANDLER.signal(ProcessSamples(samples));
+            }
+            Event::SamplesProcessed(amplitudes) => {
+                debug!("amplitudes: {:?}", amplitudes);
+                DRAW_AMPLITUDES_HANDLER.signal(DrawAmplitudes(amplitudes));
+            }
+        }
+    }
+}
+
+#[embassy_executor::main]
+async fn main(spawner: Spawner) {
+    let p = embassy_rp::init(Default::default());
+
     spawner.spawn(unwrap!(orchestration_task()));
+
+    // The PIO is built first: embassy makes a PIO pin from it.
+    let mut pio = Pio::new(p.PIO0, Irqs);
+    let pins = Hub75Pins16::new(
+        &mut pio, p.PIN_0, p.PIN_1, p.PIN_2, p.PIN_3, p.PIN_4, p.PIN_5, p.PIN_6, p.PIN_7, p.PIN_8,
+        p.PIN_9, p.PIN_10,
+        // STB and OE are the word's last two signal bits; the clock is not a
+        // signal at all — the side-set drives it, and it is wired to GP11.
+        p.PIN_12, p.PIN_13, p.PIN_11,
+    );
+
+    spawner.spawn(unwrap!(display_task(pio, pins, p.DMA_CH0, p.DMA_CH1)));
     spawner.spawn(unwrap!(samples_processing_task()));
 
     let adc = Adc::new(p.ADC, Irqs, Config::default());

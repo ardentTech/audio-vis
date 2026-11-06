@@ -11,6 +11,7 @@ embassy-executor = { version = "0.10.0", features = ["platform-cortex-m", "execu
 embassy-rp = { version = "0.10.0", features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl", "rp235xa", "binary-info"] }
 embassy-sync = "0.8.0"
 embassy-time = "0.5.1"
+embedded-graphics = "0.8.2"
 microfft = "0.6.0"
 micromath = "2.1.0"
 panic-probe = { version = "1.0.0", features = ["print-defmt"] }
