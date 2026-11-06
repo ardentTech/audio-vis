@@ -1,17 +1,43 @@
 #![no_std]
 #![no_main]
 
+mod display;
+
 use defmt::{debug, info, unwrap};
 #[allow(unused_imports)]
 use {defmt_rtt as _, panic_probe as _};
 use embassy_executor::Spawner;
 use embassy_rp::adc::{Adc, Async, Channel, Config, InterruptHandler};
-use embassy_rp::{bind_interrupts, dma};
+use embassy_rp::{bind_interrupts, clocks, pac, pio};
 use embassy_rp::gpio::Pull;
-use embassy_rp::peripherals::DMA_CH0;
+use embassy_rp::interrupt::typelevel::Handler;
+use embassy_rp::peripherals::PIO0;
+use embassy_rp::pio::Pio;
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_sync::channel;
 use embassy_sync::signal::Signal;
+use rp_hub75::{on_dma_irq, Hub75Pins16, Hub75, Hub75Config, hub75_descriptors};
+use crate::display::{Fb, PANEL_CLOCK_HZ};
+
+/// The driver's frame-boundary work, in the DMA interrupt.
+struct DmaIrqHandler;
+
+impl Handler<embassy_rp::interrupt::typelevel::DMA_IRQ_0> for DmaIrqHandler {
+    unsafe fn on_interrupt() {
+        on_dma_irq();
+    }
+}
+
+
+/// A `'static` place for a value, for the driver's `&'static mut` framebuffers.
+macro_rules! mk_static {
+    ($t:ty,$val:expr) => {{
+        static STATIC_CELL: static_cell::StaticCell<$t> = static_cell::StaticCell::new();
+        #[deny(unused_attributes)]
+        let x = STATIC_CELL.uninit().write($val);
+        x
+    }};
+}
 
 // TODO this is a command... need trait?
 struct ProcessSamples([f32; MIC_SAMPLE_BLOCK_SIZE]);
@@ -22,8 +48,6 @@ enum Event {
 }
 
 const MIC_SAMPLE_BLOCK_SIZE: usize = 128;
-const MIC_SAMPLE_BATCH_SIZE: usize = 20; // TODO dial this in
-const ADC_DIV: u16 = 4799; // 10kHz sample rate (48Mhz / 10kHz - 1)
 const DISPLAY_ROWS: usize = 32;
 
 const ADC_LEVELS: i32 = 3250; // TODO dial this in (max is 4096)
@@ -35,7 +59,8 @@ static PROCESS_SAMPLES_HANDLER: Signal<CriticalSectionRawMutex, ProcessSamples> 
 
 bind_interrupts!(struct Irqs {
     ADC_IRQ_FIFO => InterruptHandler;
-    //DMA_IRQ_0 => dma::InterruptHandler<DMA_CH0>;
+    DMA_IRQ_0 => DmaIrqHandler;
+    PIO0_IRQ_0 => pio::InterruptHandler<PIO0>;
 });
 
 // TODO any harm in using i32s here?
@@ -111,6 +136,38 @@ async fn orchestration_task() {
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
+
+    // The PIO is built first: embassy makes a PIO pin from it.
+    let mut pio = Pio::new(p.PIO0, Irqs);
+    let pins = Hub75Pins16::new(
+        &mut pio, p.PIN_0, p.PIN_1, p.PIN_2, p.PIN_3, p.PIN_4, p.PIN_5, p.PIN_6, p.PIN_7, p.PIN_8,
+        p.PIN_9, p.PIN_10,
+        // STB and OE are the word's last two signal bits; the clock is not a
+        // signal at all — the side-set drives it, and it is wired to GP11.
+        p.PIN_12, p.PIN_13, p.PIN_11,
+    );
+
+    // One framebuffer is the panel's at any moment and the other is this loop's;
+    // a swap exchanges them.
+    let fb0: &'static mut Fb = mk_static!(Fb, Fb::new());
+    let fb1: &'static mut Fb = mk_static!(Fb, Fb::new());
+
+    // The framebuffers' addresses, taken before they move into the driver. The
+    // alignment does not change the picture; the log is where it is checked.
+    let fb0_addr = fb0 as *const Fb as usize;
+    let fb1_addr = fb1 as *const Fb as usize;
+
+    let hub75 = Hub75::new(
+        pio,
+        p.DMA_CH0,
+        p.DMA_CH1,
+        pins,
+        clocks::clk_sys_freq(),
+        Hub75Config::new(pac::Interrupt::DMA_IRQ_0).with_panel_clock_hz(PANEL_CLOCK_HZ),
+        fb0,
+        hub75_descriptors!(Fb),
+    )
+        .expect("failed to start the panel");
 
     spawner.spawn(unwrap!(orchestration_task()));
     spawner.spawn(unwrap!(samples_processing_task()));
