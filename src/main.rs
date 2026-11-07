@@ -170,51 +170,102 @@ async fn display_task(
 }
 
 // TODO could use u16 instead of u32?
+// rainbow
+// fn draw(fb: &mut Fb, amplitudes: [u32; PANEL_WIDTH]) {
+//     fb.erase();
+//
+//     for (col, v) in amplitudes.iter().enumerate() {
+//         for i in 0..*v {
+//             fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT / 2) - 1) as i32 - i as i32), color(i));
+//             fb.set_pixel(Point::new(col as i32, (PANEL_HEIGHT / 2) as i32 + i as i32), color(i));
+//         }
+//     }
+// }
+
 fn draw(fb: &mut Fb, amplitudes: [u32; PANEL_WIDTH]) {
     fb.erase();
 
     for (col, v) in amplitudes.iter().enumerate() {
         for i in 0..*v {
-            fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT / 2) - 1) as i32 - i as i32), color(i));
-            fb.set_pixel(Point::new(col as i32, (PANEL_HEIGHT / 2) as i32 + i as i32), color(i));
+            fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT / 2) - 1) as i32 - i as i32), color(col, i));
+            fb.set_pixel(Point::new(col as i32, (PANEL_HEIGHT / 2) as i32 + i as i32), color(col, i));
         }
     }
 }
 
-fn color(v: u32) -> Rgb888 {
-    let blue = Rgb888::new(0, 0, 128);
-    let ocean = Rgb888::new(0, 64, 128);
-    let cyan = Rgb888::new(0, 128, 128);
-    let turquoise = Rgb888::new(0, 128, 64);
-    let green = Rgb888::new(0, 128, 0);
-    let spring_green = Rgb888::new(64, 128, 0);
-    let yellow = Rgb888::new(128, 128, 0);
-    let orange = Rgb888::new(128, 64, 0);
-    let red = Rgb888::new(128, 0, 0);
-    let raspberry = Rgb888::new(128, 0, 64);
-    let magenta = Rgb888::new(128, 0, 128);
-    let violet = Rgb888::new(64, 0, 128);
-
-    if v < 1 {
-        blue
-    } else if v < 3 {
-        ocean
-    } else if v < 5 {
-        cyan
-    } else if v < 7 {
-        turquoise
-    } else if v < 9 {
-        green
-    } else if v < 11 {
-        spring_green
-    } else if v < 13 {
-        yellow
-    } else if v < 15 {
-        orange
+// cool
+fn color(col: usize, v: u32) -> Rgb888 {
+    if col < 1 || col > 62 {
+        Rgb888::new(128, 0, 128)
+    } else if col < 3 || col > 60 {
+        Rgb888::new(112, 0, 128)
+    } else if col < 5 || col > 58 {
+        Rgb888::new(96, 0, 128)
+    } else if col < 7 || col > 56 {
+        Rgb888::new(80, 0, 128)
+    } else if col < 9 || col > 54 {
+        Rgb888::new(64, 0, 128)
+    } else if col < 11 || col > 52 {
+        Rgb888::new(48, 0, 128)
+    } else if col < 13 || col > 50 {
+        Rgb888::new(32, 0, 128)
+    } else if col < 15 || col > 48 {
+        Rgb888::new(16, 0, 128)
+    } else if col < 17 || col > 46 {
+        Rgb888::new(0, 0, 128)
+    } else if col < 19 || col > 44 {
+        Rgb888::new(0, 16, 128)
+    } else if col < 21 || col > 42 {
+        Rgb888::new(0, 32, 128)
+    } else if col < 23 || col > 40 {
+        Rgb888::new(0, 48, 128)
+    } else if col < 25 || col > 38 {
+        Rgb888::new(0, 64, 128)
+    } else if col < 27 || col > 36 {
+        Rgb888::new(0, 80, 128)
+    } else if col < 29 || col > 34 {
+        Rgb888::new(0, 96, 128)
+    } else if col < 31 || col > 32 {
+        Rgb888::new(0, 112, 128)
     } else {
-        red
+        Rgb888::new(0, 128, 128)
     }
 }
+
+// fn color(v: u32) -> Rgb888 {
+//     let blue = Rgb888::new(0, 0, 128);
+//     let ocean = Rgb888::new(0, 64, 128);
+//     let cyan = Rgb888::new(0, 128, 128);
+//     let turquoise = Rgb888::new(0, 128, 64);
+//     let green = Rgb888::new(0, 128, 0);
+//     let spring_green = Rgb888::new(64, 128, 0);
+//     let yellow = Rgb888::new(128, 128, 0);
+//     let orange = Rgb888::new(128, 64, 0);
+//     let red = Rgb888::new(128, 0, 0);
+//     let raspberry = Rgb888::new(128, 0, 64);
+//     let magenta = Rgb888::new(128, 0, 128);
+//     let violet = Rgb888::new(64, 0, 128);
+//
+//     if v < 1 {
+//         blue
+//     } else if v < 3 {
+//         ocean
+//     } else if v < 5 {
+//         cyan
+//     } else if v < 7 {
+//         turquoise
+//     } else if v < 9 {
+//         green
+//     } else if v < 11 {
+//         spring_green
+//     } else if v < 13 {
+//         yellow
+//     } else if v < 15 {
+//         orange
+//     } else {
+//         red
+//     }
+// }
 
 #[embassy_executor::task]
 async fn orchestration_task() {
