@@ -42,12 +42,12 @@ macro_rules! mk_static {
 }
 
 const ADC_RESOLUTION: i32 = 4096;
-const MIC_SAMPLE_BLOCK_SIZE: usize = 128;
-const READS_PER_SAMPLE: usize = 16;
+const MIC_SAMPLE_BLOCK_SIZE: usize = PANEL_WIDTH * 2;
+const READS_PER_SAMPLE: usize = 64;
 
 // TODO this is a command... need trait?
 struct ProcessSamples([f32; MIC_SAMPLE_BLOCK_SIZE]);
-struct DrawAmplitudes([u32; PANEL_WIDTH]);
+struct DrawSamples([u32; PANEL_WIDTH]);
 
 enum Event {
     SamplesRead([f32; MIC_SAMPLE_BLOCK_SIZE]),
@@ -57,7 +57,7 @@ enum Event {
 /// Channel for events from worker tasks to the orchestrator
 static EVENT_CHANNEL: channel::Channel<CriticalSectionRawMutex, Event, 10> = channel::Channel::new();
 static PROCESS_SAMPLES_HANDLER: Signal<CriticalSectionRawMutex, ProcessSamples> = Signal::new();
-static DRAW_AMPLITUDES_HANDLER: Signal<CriticalSectionRawMutex, DrawAmplitudes> = Signal::new();
+static DRAW_AMPLITUDES_HANDLER: Signal<CriticalSectionRawMutex, DrawSamples> = Signal::new();
 
 
 bind_interrupts!(struct Irqs {
@@ -113,9 +113,9 @@ async fn samples_processing_task() {
         spectrum[0].im = 0.0;
         spectrum[0].re = 0.0; // TODO not sure about this
 
-        let mut amplitudes: [u32; PANEL_HEIGHT * 2] = [0; PANEL_HEIGHT * 2];
+        let mut amplitudes: [u32; PANEL_WIDTH] = [0; PANEL_WIDTH];
         spectrum.iter().enumerate().for_each(|(i, v)| {
-            amplitudes[i] = map_range(v.l1_norm() as i32, 0, ADC_RESOLUTION, 0, PANEL_HEIGHT as i32) as u32; // TODO so many type casts
+            amplitudes[i] = map_range(v.l1_norm() as i32, 0, ADC_RESOLUTION, 0, (PANEL_HEIGHT / 2) as i32) as u32; // TODO so many type casts
         });
         sender.send(Event::SamplesProcessed(amplitudes)).await;
     }
@@ -159,7 +159,7 @@ async fn display_task(
 
     loop {
         let amplitudes = DRAW_AMPLITUDES_HANDLER.wait().await;
-        draw(fb, amplitudes);
+        draw(fb, amplitudes.0);
         match hub75.swap(fb) {
             Ok(mut swap) => {
                 swap.wait_for_done().await;
@@ -170,16 +170,51 @@ async fn display_task(
     }
 }
 
-fn draw(fb: &mut Fb, amplitudes: DrawAmplitudes) {
-    debug!("draw");
+// TODO could use u16 instead of u32?
+fn draw(fb: &mut Fb, amplitudes: [u32; PANEL_WIDTH]) {
     fb.erase();
-    let blue = Rgb888::new(0, 0, 255);
-    for (col, v) in amplitudes.0.iter().enumerate() {
+
+    for (col, v) in amplitudes.iter().enumerate() {
         for i in 0..*v {
-            fb.set_pixel(Point::new(col as i32, PANEL_HEIGHT as i32 - i as i32), blue);
+            fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT / 2) - 1) as i32 - i as i32), color(i));
+            fb.set_pixel(Point::new(col as i32, (PANEL_HEIGHT / 2) as i32 + i as i32), color(i));
         }
     }
+}
 
+fn color(v: u32) -> Rgb888 {
+    let blue = Rgb888::new(0, 0, 128);
+    let ocean = Rgb888::new(0, 64, 128);
+    let cyan = Rgb888::new(0, 128, 128);
+    let turquoise = Rgb888::new(0, 128, 64);
+    let green = Rgb888::new(0, 128, 0);
+    let spring_green = Rgb888::new(64, 128, 0);
+    let yellow = Rgb888::new(128, 128, 0);
+    let orange = Rgb888::new(128, 64, 0);
+    let red = Rgb888::new(128, 0, 0);
+    let raspberry = Rgb888::new(128, 0, 64);
+    let magenta = Rgb888::new(128, 0, 128);
+    let violet = Rgb888::new(64, 0, 128);
+
+    if v < 1 {
+        blue
+    } else if v < 3 {
+        ocean
+    } else if v < 5 {
+        cyan
+    } else if v < 7 {
+        turquoise
+    } else if v < 9 {
+        green
+    } else if v < 11 {
+        spring_green
+    } else if v < 13 {
+        yellow
+    } else if v < 15 {
+        orange
+    } else {
+        red
+    }
 }
 
 #[embassy_executor::task]
@@ -193,8 +228,7 @@ async fn orchestration_task() {
                 PROCESS_SAMPLES_HANDLER.signal(ProcessSamples(samples));
             }
             Event::SamplesProcessed(amplitudes) => {
-                debug!("amplitudes: {:?}", amplitudes);
-                DRAW_AMPLITUDES_HANDLER.signal(DrawAmplitudes(amplitudes));
+                DRAW_AMPLITUDES_HANDLER.signal(DrawSamples(amplitudes));
             }
         }
     }
