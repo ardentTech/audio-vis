@@ -195,40 +195,39 @@ fn draw(fb: &mut Fb, amplitudes: [u32; PANEL_WIDTH]) {
 
 // cool
 fn color(col: usize, v: u32) -> Rgb888 {
-    if col < 1 || col > 62 {
-        Rgb888::new(128, 0, 128)
-    } else if col < 3 || col > 60 {
-        Rgb888::new(112, 0, 128)
-    } else if col < 5 || col > 58 {
-        Rgb888::new(96, 0, 128)
-    } else if col < 7 || col > 56 {
-        Rgb888::new(80, 0, 128)
-    } else if col < 9 || col > 54 {
-        Rgb888::new(64, 0, 128)
-    } else if col < 11 || col > 52 {
-        Rgb888::new(48, 0, 128)
-    } else if col < 13 || col > 50 {
-        Rgb888::new(32, 0, 128)
-    } else if col < 15 || col > 48 {
-        Rgb888::new(16, 0, 128)
-    } else if col < 17 || col > 46 {
-        Rgb888::new(0, 0, 128)
-    } else if col < 19 || col > 44 {
-        Rgb888::new(0, 16, 128)
-    } else if col < 21 || col > 42 {
-        Rgb888::new(0, 32, 128)
-    } else if col < 23 || col > 40 {
-        Rgb888::new(0, 48, 128)
-    } else if col < 25 || col > 38 {
-        Rgb888::new(0, 64, 128)
-    } else if col < 27 || col > 36 {
-        Rgb888::new(0, 80, 128)
-    } else if col < 29 || col > 34 {
-        Rgb888::new(0, 96, 128)
-    } else if col < 31 || col > 32 {
-        Rgb888::new(0, 112, 128)
-    } else {
-        Rgb888::new(0, 128, 128)
+    match col {
+        0 | 63 => Rgb888::new(128, 0, 128),
+        1 | 62 => Rgb888::new(120, 0, 128),
+        2 | 61 => Rgb888::new(112, 0, 128),
+        3 | 60 => Rgb888::new(104, 0, 128),
+        4 | 59 => Rgb888::new(96, 0, 128),
+        5 | 58 => Rgb888::new(88, 0, 128),
+        6 | 57 => Rgb888::new(80, 0, 128),
+        7 | 56 => Rgb888::new(72, 0, 128),
+        8 | 55 => Rgb888::new(64, 0, 128),
+        9 | 54 => Rgb888::new(56, 0, 128),
+        10 | 53 => Rgb888::new(48, 0, 128),
+        11 | 52 => Rgb888::new(40, 0, 128),
+        12 | 51 => Rgb888::new(32, 0, 128),
+        13 | 50 => Rgb888::new(24, 0, 128),
+        14 | 49 => Rgb888::new(16, 0, 128),
+        15 | 48 => Rgb888::new(8, 0, 128),
+        16 | 47 => Rgb888::new(0, 0, 128),
+        17 | 46 => Rgb888::new(0, 8, 128),
+        18 | 45 => Rgb888::new(0, 16, 128),
+        19 | 44 => Rgb888::new(0, 24, 128),
+        20 | 43 => Rgb888::new(0, 32, 128),
+        21 | 42 => Rgb888::new(0, 40, 128),
+        22 | 41 => Rgb888::new(0, 48, 128),
+        23 | 40 => Rgb888::new(0, 56, 128),
+        24 | 39 => Rgb888::new(0, 64, 128),
+        25 | 38 => Rgb888::new(0, 72, 128),
+        26 | 37 => Rgb888::new(0, 80, 128),
+        27 | 36 => Rgb888::new(0, 88, 128),
+        28 | 35 => Rgb888::new(0, 96, 128),
+        29 | 34 => Rgb888::new(0, 104, 128),
+        30 | 33 => Rgb888::new(0, 112, 128),
+        _ => Rgb888::new(0, 120, 128),
     }
 }
 
