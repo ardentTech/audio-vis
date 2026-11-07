@@ -106,12 +106,11 @@ async fn samples_processing_task() {
 
     loop {
         let mut samples = PROCESS_SAMPLES_HANDLER.wait().await;
-        //info!("samples: {}", samples.0);
         let spectrum = microfft::real::rfft_128(&mut samples.0);
         // since the real-valued coefficient at the Nyquist frequency is packed into the
         // imaginary part of the DC bin, it must be cleared before computing the amplitudes
-        spectrum[0].im = 0.0;
-        spectrum[0].re = 0.0; // TODO not sure about this
+        //spectrum[0].im = 0.0;
+        spectrum[0].re = 0.0;
 
         let mut amplitudes: [u32; PANEL_WIDTH] = [0; PANEL_WIDTH];
         spectrum.iter().enumerate().for_each(|(i, v)| {
