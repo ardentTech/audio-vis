@@ -20,7 +20,7 @@ use embassy_sync::signal::Signal;
 use embedded_graphics::geometry::Point;
 use embedded_graphics::pixelcolor::Rgb888;
 use rp_hub75::{on_dma_irq, Hub75Pins16, Hub75, Hub75Config, hub75_descriptors, Hub75Swap};
-use crate::colors::{BLUE, BLUE_OCEAN, BLUE_VIOLET, CYAN, CYAN_OCEAN, CYAN_TURQUOISE, GREEN, GREEN_SPRING_GREEN, GREEN_TURQUOISE, OCEAN, ORANGE, RED_ORANGE, SPRING_GREEN, TURQUOISE, VIOLET, YELLOW, YELLOW_ORANGE, YELLOW_SPRING_GREEN};
+use crate::colors::{BLUE, BLUE_OCEAN, BLUE_VIOLET, CYAN, CYAN_OCEAN, CYAN_TURQUOISE, GREEN, GREEN_SPRING_GREEN, GREEN_TURQUOISE, MAGENTA, MAGENTA_ROSE, OCEAN, ORANGE, ROSE, RED, RED_ORANGE, RED_ROSE, SPRING_GREEN, TURQUOISE, VIOLET, VIOLET_MAGENTA, YELLOW, YELLOW_ORANGE, YELLOW_SPRING_GREEN, ROSE_RED, ORANGE_RED, ORANGE_YELLOW, SPRING_GREEN_YELLOW, SPRING_GREEN_GREEN, ROSE_MAGENTA};
 use crate::display::{Fb, PANEL_CLOCK_HZ, PANEL_HEIGHT, PANEL_WIDTH};
 
 /// The driver's frame-boundary work, in the DMA interrupt.
@@ -176,8 +176,8 @@ fn draw(fb: &mut Fb, amplitudes: [u32; PANEL_WIDTH]) {
     fb.erase();
     for (col, v) in amplitudes.iter().enumerate() {
         for i in 0..*v {
-            fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT / 2) - 1) as i32 - i as i32), cool_column(i));
-            fb.set_pixel(Point::new(col as i32, (PANEL_HEIGHT / 2) as i32 + i as i32), cool_column(i));
+            fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT / 2) - 1) as i32 - i as i32), warm_column(i));
+            fb.set_pixel(Point::new(col as i32, (PANEL_HEIGHT / 2) as i32 + i as i32), warm_column(i));
         }
     }
 }
@@ -200,6 +200,28 @@ fn cool_column(v: u32) -> Rgb888 {
         13 => YELLOW_ORANGE,
         14 => ORANGE,
         _ => RED_ORANGE
+    }
+}
+
+fn warm_column(v: u32) -> Rgb888 {
+    match v {
+        //0 => ROSE_MAGENTA,
+        0 => ROSE,
+        1 => ROSE_RED,
+        2 => RED_ROSE,
+        3 => RED,
+        4 => RED_ORANGE,
+        5 => ORANGE_RED,
+        6 => ORANGE,
+        7 => ORANGE_YELLOW,
+        8 => YELLOW_ORANGE,
+        9 => YELLOW,
+        10 => YELLOW_SPRING_GREEN,
+        11 => SPRING_GREEN_YELLOW,
+        12 => SPRING_GREEN,
+        13 => SPRING_GREEN_GREEN,
+        14 => GREEN_SPRING_GREEN,
+        _ => GREEN,
     }
 }
 
