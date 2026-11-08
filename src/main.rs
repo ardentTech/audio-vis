@@ -2,6 +2,7 @@
 #![no_main]
 
 mod display;
+mod colors;
 
 use defmt::{debug, info, unwrap};
 #[allow(unused_imports)]
@@ -19,6 +20,7 @@ use embassy_sync::signal::Signal;
 use embedded_graphics::geometry::Point;
 use embedded_graphics::pixelcolor::Rgb888;
 use rp_hub75::{on_dma_irq, Hub75Pins16, Hub75, Hub75Config, hub75_descriptors, Hub75Swap};
+use crate::colors::{BLUE, BLUE_OCEAN, BLUE_VIOLET, CYAN, CYAN_OCEAN, CYAN_TURQUOISE, GREEN, GREEN_SPRING_GREEN, GREEN_TURQUOISE, OCEAN, ORANGE, RED_ORANGE, SPRING_GREEN, TURQUOISE, VIOLET, YELLOW, YELLOW_ORANGE, YELLOW_SPRING_GREEN};
 use crate::display::{Fb, PANEL_CLOCK_HZ, PANEL_HEIGHT, PANEL_WIDTH};
 
 /// The driver's frame-boundary work, in the DMA interrupt.
@@ -41,6 +43,8 @@ macro_rules! mk_static {
     }};
 }
 
+// const BRIGHTNESS: u8 = 255;
+//const COL_STEPS: u8 = BRIGHTNESS / PANEL_WIDTH as u8;
 const ADC_RESOLUTION: i32 = 4096;
 const MIC_SAMPLE_BLOCK_SIZE: usize = PANEL_WIDTH * 2;
 const READS_PER_SAMPLE: usize = 64;
@@ -48,6 +52,7 @@ const READS_PER_SAMPLE: usize = 64;
 // TODO this is a command... need trait?
 struct ProcessSamples([f32; MIC_SAMPLE_BLOCK_SIZE]);
 struct DrawSamples([u32; PANEL_WIDTH]);
+
 
 enum Event {
     SamplesRead([f32; MIC_SAMPLE_BLOCK_SIZE]),
@@ -129,8 +134,6 @@ async fn display_task(
 ) {
     debug!("display_task");
 
-    let sender = EVENT_CHANNEL.sender();
-
     // One framebuffer is the panel's at any moment and the other is this loop's;
     // a swap exchanges them.
     let fb0: &'static mut Fb = mk_static!(Fb, Fb::new());
@@ -169,102 +172,36 @@ async fn display_task(
     }
 }
 
-// TODO could use u16 instead of u32?
-// rainbow
-// fn draw(fb: &mut Fb, amplitudes: [u32; PANEL_WIDTH]) {
-//     fb.erase();
-//
-//     for (col, v) in amplitudes.iter().enumerate() {
-//         for i in 0..*v {
-//             fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT / 2) - 1) as i32 - i as i32), color(i));
-//             fb.set_pixel(Point::new(col as i32, (PANEL_HEIGHT / 2) as i32 + i as i32), color(i));
-//         }
-//     }
-// }
-
 fn draw(fb: &mut Fb, amplitudes: [u32; PANEL_WIDTH]) {
     fb.erase();
-
     for (col, v) in amplitudes.iter().enumerate() {
         for i in 0..*v {
-            fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT / 2) - 1) as i32 - i as i32), color(col, i));
-            fb.set_pixel(Point::new(col as i32, (PANEL_HEIGHT / 2) as i32 + i as i32), color(col, i));
+            fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT / 2) - 1) as i32 - i as i32), cool_column(i));
+            fb.set_pixel(Point::new(col as i32, (PANEL_HEIGHT / 2) as i32 + i as i32), cool_column(i));
         }
     }
 }
 
-// cool
-fn color(col: usize, v: u32) -> Rgb888 {
-    match col {
-        0 | 63 => Rgb888::new(128, 0, 128),
-        1 | 62 => Rgb888::new(120, 0, 128),
-        2 | 61 => Rgb888::new(112, 0, 128),
-        3 | 60 => Rgb888::new(104, 0, 128),
-        4 | 59 => Rgb888::new(96, 0, 128),
-        5 | 58 => Rgb888::new(88, 0, 128),
-        6 | 57 => Rgb888::new(80, 0, 128),
-        7 | 56 => Rgb888::new(72, 0, 128),
-        8 | 55 => Rgb888::new(64, 0, 128),
-        9 | 54 => Rgb888::new(56, 0, 128),
-        10 | 53 => Rgb888::new(48, 0, 128),
-        11 | 52 => Rgb888::new(40, 0, 128),
-        12 | 51 => Rgb888::new(32, 0, 128),
-        13 | 50 => Rgb888::new(24, 0, 128),
-        14 | 49 => Rgb888::new(16, 0, 128),
-        15 | 48 => Rgb888::new(8, 0, 128),
-        16 | 47 => Rgb888::new(0, 0, 128),
-        17 | 46 => Rgb888::new(0, 8, 128),
-        18 | 45 => Rgb888::new(0, 16, 128),
-        19 | 44 => Rgb888::new(0, 24, 128),
-        20 | 43 => Rgb888::new(0, 32, 128),
-        21 | 42 => Rgb888::new(0, 40, 128),
-        22 | 41 => Rgb888::new(0, 48, 128),
-        23 | 40 => Rgb888::new(0, 56, 128),
-        24 | 39 => Rgb888::new(0, 64, 128),
-        25 | 38 => Rgb888::new(0, 72, 128),
-        26 | 37 => Rgb888::new(0, 80, 128),
-        27 | 36 => Rgb888::new(0, 88, 128),
-        28 | 35 => Rgb888::new(0, 96, 128),
-        29 | 34 => Rgb888::new(0, 104, 128),
-        30 | 33 => Rgb888::new(0, 112, 128),
-        _ => Rgb888::new(0, 120, 128),
+fn cool_column(v: u32) -> Rgb888 {
+    match v {
+        0 => BLUE,
+        1 => BLUE_OCEAN,
+        2 => OCEAN,
+        3 => CYAN_OCEAN,
+        4 => CYAN,
+        5 => CYAN_TURQUOISE,
+        6 => TURQUOISE,
+        7 => GREEN_TURQUOISE,
+        8 => GREEN,
+        9 => GREEN_SPRING_GREEN,
+        10 => SPRING_GREEN,
+        11 => YELLOW_SPRING_GREEN,
+        12 => YELLOW,
+        13 => YELLOW_ORANGE,
+        14 => ORANGE,
+        _ => RED_ORANGE
     }
 }
-
-// fn color(v: u32) -> Rgb888 {
-//     let blue = Rgb888::new(0, 0, 128);
-//     let ocean = Rgb888::new(0, 64, 128);
-//     let cyan = Rgb888::new(0, 128, 128);
-//     let turquoise = Rgb888::new(0, 128, 64);
-//     let green = Rgb888::new(0, 128, 0);
-//     let spring_green = Rgb888::new(64, 128, 0);
-//     let yellow = Rgb888::new(128, 128, 0);
-//     let orange = Rgb888::new(128, 64, 0);
-//     let red = Rgb888::new(128, 0, 0);
-//     let raspberry = Rgb888::new(128, 0, 64);
-//     let magenta = Rgb888::new(128, 0, 128);
-//     let violet = Rgb888::new(64, 0, 128);
-//
-//     if v < 1 {
-//         blue
-//     } else if v < 3 {
-//         ocean
-//     } else if v < 5 {
-//         cyan
-//     } else if v < 7 {
-//         turquoise
-//     } else if v < 9 {
-//         green
-//     } else if v < 11 {
-//         spring_green
-//     } else if v < 13 {
-//         yellow
-//     } else if v < 15 {
-//         orange
-//     } else {
-//         red
-//     }
-// }
 
 #[embassy_executor::task]
 async fn orchestration_task() {
