@@ -24,7 +24,7 @@ use microfft::Complex32;
 use rp_hub75::{on_dma_irq, Hub75Pins16, Hub75, Hub75Config, hub75_descriptors, Hub75Swap};
 use crate::colors::{BLUE, BLUE_OCEAN, BLUE_VIOLET, CYAN, CYAN_OCEAN, CYAN_TURQUOISE, GREEN, GREEN_SPRING_GREEN, GREEN_TURQUOISE, MAGENTA, MAGENTA_ROSE, OCEAN, ORANGE, ROSE, RED, RED_ORANGE, RED_ROSE, SPRING_GREEN, TURQUOISE, VIOLET, VIOLET_MAGENTA, YELLOW, YELLOW_ORANGE, YELLOW_SPRING_GREEN, ROSE_RED, ORANGE_RED, ORANGE_YELLOW, SPRING_GREEN_YELLOW, SPRING_GREEN_GREEN, ROSE_MAGENTA};
 use crate::display::{Fb, PANEL_CLOCK_HZ, PANEL_HEIGHT, PANEL_WIDTH};
-use crate::patterns::BlueGreen;
+use crate::patterns::{BlueGreen, ColorPattern, RedYellow};
 
 /// The driver's frame-boundary work, in the DMA interrupt.
 struct DmaIrqHandler;
@@ -165,7 +165,8 @@ async fn display_task(
     loop {
         let samples = DRAW_AMPLITUDES_HANDLER.wait().await;
         //draw(fb, samples.0);
-        BlueGreen::draw(fb, samples.0);
+        //BlueGreen::draw(fb, samples.0);
+        RedYellow::draw(fb, samples.0);
         match hub75.swap(fb) {
             Ok(mut swap) => {
                 swap.wait_for_done().await;
