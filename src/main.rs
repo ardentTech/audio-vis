@@ -3,6 +3,7 @@
 
 mod display;
 mod colors;
+mod patterns;
 
 use defmt::{debug, info, unwrap};
 #[allow(unused_imports)]
@@ -19,9 +20,11 @@ use embassy_sync::channel;
 use embassy_sync::signal::Signal;
 use embedded_graphics::geometry::Point;
 use embedded_graphics::pixelcolor::Rgb888;
+use microfft::Complex32;
 use rp_hub75::{on_dma_irq, Hub75Pins16, Hub75, Hub75Config, hub75_descriptors, Hub75Swap};
 use crate::colors::{BLUE, BLUE_OCEAN, BLUE_VIOLET, CYAN, CYAN_OCEAN, CYAN_TURQUOISE, GREEN, GREEN_SPRING_GREEN, GREEN_TURQUOISE, MAGENTA, MAGENTA_ROSE, OCEAN, ORANGE, ROSE, RED, RED_ORANGE, RED_ROSE, SPRING_GREEN, TURQUOISE, VIOLET, VIOLET_MAGENTA, YELLOW, YELLOW_ORANGE, YELLOW_SPRING_GREEN, ROSE_RED, ORANGE_RED, ORANGE_YELLOW, SPRING_GREEN_YELLOW, SPRING_GREEN_GREEN, ROSE_MAGENTA};
 use crate::display::{Fb, PANEL_CLOCK_HZ, PANEL_HEIGHT, PANEL_WIDTH};
+use crate::patterns::BlueGreen;
 
 /// The driver's frame-boundary work, in the DMA interrupt.
 struct DmaIrqHandler;
@@ -43,20 +46,18 @@ macro_rules! mk_static {
     }};
 }
 
-// const BRIGHTNESS: u8 = 255;
-//const COL_STEPS: u8 = BRIGHTNESS / PANEL_WIDTH as u8;
 const ADC_RESOLUTION: i32 = 4096;
 const MIC_SAMPLE_BLOCK_SIZE: usize = PANEL_WIDTH * 2;
 const READS_PER_SAMPLE: usize = 64;
 
 // TODO this is a command... need trait?
 struct ProcessSamples([f32; MIC_SAMPLE_BLOCK_SIZE]);
-struct DrawSamples([u32; PANEL_WIDTH]);
+struct DrawSamples([Complex32; PANEL_WIDTH]);
 
 
 enum Event {
     SamplesRead([f32; MIC_SAMPLE_BLOCK_SIZE]),
-    SamplesProcessed([u32; PANEL_HEIGHT * 2]),
+    SamplesProcessed([Complex32; PANEL_WIDTH]),
 }
 
 /// Channel for events from worker tasks to the orchestrator
@@ -73,14 +74,15 @@ bind_interrupts!(struct Irqs {
 
 // TODO any harm in using i32s here?
 // TODO write unit tests
-fn map_range(a: i32, in_min: i32, in_max: i32, out_min: i32, out_max: i32) -> i32 {
-    if a < in_min {
-        return out_min;
-    } else if a > in_max {
-        return out_max;
-    }
-    (a - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
-}
+// TODO eventually remove
+// fn map_range(a: i32, in_min: i32, in_max: i32, out_min: i32, out_max: i32) -> i32 {
+//     if a < in_min {
+//         return out_min;
+//     } else if a > in_max {
+//         return out_max;
+//     }
+//     (a - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+// }
 
 #[embassy_executor::task]
 async fn samples_read_task(
@@ -117,11 +119,12 @@ async fn samples_processing_task() {
         //spectrum[0].im = 0.0;
         spectrum[0].re = 0.0;
 
-        let mut amplitudes: [u32; PANEL_WIDTH] = [0; PANEL_WIDTH];
-        spectrum.iter().enumerate().for_each(|(i, v)| {
-            amplitudes[i] = map_range(v.l1_norm() as i32, 0, ADC_RESOLUTION, 0, (PANEL_HEIGHT / 2) as i32) as u32; // TODO so many type casts
-        });
-        sender.send(Event::SamplesProcessed(amplitudes)).await;
+        // let mut amplitudes: [u32; PANEL_WIDTH] = [0; PANEL_WIDTH];
+        // spectrum.iter().enumerate().for_each(|(i, v)| {
+        //     // TODO out_max depends on whether or not the drawing mode is mirrored... is PANEL_HEIGHT if not mirrored
+        //     amplitudes[i] = map_range(v.l1_norm() as i32, 0, ADC_RESOLUTION, 0, (PANEL_HEIGHT / 2) as i32) as u32; // TODO so many type casts
+        // });
+        sender.send(Event::SamplesProcessed(*spectrum)).await;
     }
 }
 
@@ -160,8 +163,9 @@ async fn display_task(
     let mut fb = fb1;
 
     loop {
-        let amplitudes = DRAW_AMPLITUDES_HANDLER.wait().await;
-        draw(fb, amplitudes.0);
+        let samples = DRAW_AMPLITUDES_HANDLER.wait().await;
+        //draw(fb, samples.0);
+        BlueGreen::draw(fb, samples.0);
         match hub75.swap(fb) {
             Ok(mut swap) => {
                 swap.wait_for_done().await;
@@ -172,17 +176,17 @@ async fn display_task(
     }
 }
 
-fn draw(fb: &mut Fb, amplitudes: [u32; PANEL_WIDTH]) {
-    fb.erase();
-    for (col, v) in amplitudes.iter().enumerate() {
-        for i in 0..*v {
-            fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT / 2) - 1) as i32 - i as i32), warm_column(i));
-            fb.set_pixel(Point::new(col as i32, (PANEL_HEIGHT / 2) as i32 + i as i32), warm_column(i));
-        }
-    }
-}
+// fn draw(fb: &mut Fb, amplitudes: [u32; PANEL_WIDTH]) {
+//     fb.erase();
+//     for (col, v) in amplitudes.iter().enumerate() {
+//         for i in 0..*v {
+//             fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT / 2) - 1) as i32 - i as i32), warm_column_mirror(i));
+//             fb.set_pixel(Point::new(col as i32, (PANEL_HEIGHT / 2) as i32 + i as i32), warm_column_mirror(i));
+//         }
+//     }
+// }
 
-fn cool_column(v: u32) -> Rgb888 {
+fn cool_column_mirror(v: u32) -> Rgb888 {
     match v {
         0 => BLUE,
         1 => BLUE_OCEAN,
@@ -203,7 +207,7 @@ fn cool_column(v: u32) -> Rgb888 {
     }
 }
 
-fn warm_column(v: u32) -> Rgb888 {
+fn warm_column_mirror(v: u32) -> Rgb888 {
     match v {
         //0 => ROSE_MAGENTA,
         0 => ROSE,
@@ -235,8 +239,8 @@ async fn orchestration_task() {
             Event::SamplesRead(samples) => {
                 PROCESS_SAMPLES_HANDLER.signal(ProcessSamples(samples));
             }
-            Event::SamplesProcessed(amplitudes) => {
-                DRAW_AMPLITUDES_HANDLER.signal(DrawSamples(amplitudes));
+            Event::SamplesProcessed(samples) => {
+                DRAW_AMPLITUDES_HANDLER.signal(DrawSamples(samples));
             }
         }
     }
