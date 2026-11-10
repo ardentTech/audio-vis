@@ -164,9 +164,8 @@ async fn display_task(
 
     loop {
         let samples = DRAW_AMPLITUDES_HANDLER.wait().await;
-        //draw(fb, samples.0);
-        //BlueGreen::draw(fb, samples.0);
-        RedYellow::draw(fb, samples.0);
+        BlueGreen::draw(fb, samples.0);
+        //RedYellow::draw(fb, samples.0);
         match hub75.swap(fb) {
             Ok(mut swap) => {
                 swap.wait_for_done().await;

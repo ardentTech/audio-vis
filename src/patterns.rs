@@ -18,9 +18,11 @@ pub(crate) trait ColorPattern {
     fn draw(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]);
 }
 
-pub(crate) struct BlueGreen;
+trait FullHeight {
+    fn set_rgb(col: usize, row: u32) -> Rgb888;
+}
 
-impl ColorPattern for BlueGreen {
+impl <T: FullHeight> ColorPattern for T {
     fn draw(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
         // map range
         let mut amplitudes: [u32; PANEL_WIDTH] = [0; PANEL_WIDTH];
@@ -36,58 +38,31 @@ impl ColorPattern for BlueGreen {
     }
 }
 
-impl BlueGreen {
+pub(crate) struct BlueGreen;
+impl FullHeight for BlueGreen {
     fn set_rgb(col: usize, row: u32) -> Rgb888 {
         match row {
-            0 | 1 => BLUE_VIOLET,
-            2 | 3 => BLUE,
-            4 | 5 => BLUE_OCEAN,
-            6 | 7 => OCEAN_BLUE,
-            8 | 9 => OCEAN,
-            10 | 11 => OCEAN_CYAN,
-            12 | 13 => CYAN_OCEAN,
-            14 | 15 => CYAN,
-            16 | 17 => CYAN_TURQUOISE,
-            18 | 19 => TURQUOISE_CYAN,
-            20 | 21 => TURQUOISE,
-            22 | 23 => TURQUOISE_GREEN,
-            24 | 25 => GREEN_TURQUOISE,
-            26 | 27 => GREEN,
-            28 | 29 => GREEN_SPRING_GREEN,
-            _ => SPRING_GREEN_GREEN
+            0 | 1 | 2 | 3 | 4 | 5 | 6  | 7 | 8 | 9 | 10 | 11 | 12 => BLUE,
+            13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 => OCEAN_BLUE,
+            21 | 22 | 23 | 24 | 25 => OCEAN_CYAN,
+            26 | 27 | 28 => CYAN,
+            29 | 30 => TURQUOISE_CYAN,
+            _ => TURQUOISE_GREEN
         }
     }
 }
 
 pub(crate) struct RedYellow;
 
-impl ColorPattern for RedYellow {
-    fn draw(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
-        // map range
-        let mut amplitudes: [u32; PANEL_WIDTH] = [0; PANEL_WIDTH];
-        samples.iter().enumerate().for_each(|(i, v)| {
-            amplitudes[i] = map_range(v.l1_norm() as i32, 0, ADC_RESOLUTION, 0, PANEL_HEIGHT as i32) as u32; // TODO so many type casts
-        });
-        fb.erase();
-        for (col, v) in amplitudes.iter().enumerate() {
-            for row in 0..*v {
-                fb.set_pixel(Point::new(col as i32, (PANEL_HEIGHT as i32 - 1) - row as i32), Self::set_rgb(col, row));
-            }
-        }
-    }
-}
-
-impl RedYellow {
+impl FullHeight for RedYellow {
     fn set_rgb(col: usize, row: u32) -> Rgb888 {
         match row {
-            0 | 1 | 2 | 3 | 4 => RED,
-            5 | 6 | 7 | 8 | 9 => RED_ORANGE,
-            10 | 11 | 12 | 13 | 14 => ORANGE_RED,
-            15 | 16 | 17 | 18 | 19 => ORANGE,
-            20 | 21 | 22 | 23 | 24 => ORANGE_YELLOW,
-            25 | 26 | 27 => YELLOW_ORANGE,
-            28 | 29 | 30 => YELLOW,
-            _ => WHITE
+            0 | 1 | 2 | 3 | 4 | 5 | 6  | 7 | 8 | 9 | 10 | 11 | 12 => RED,
+            13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 => RED_ORANGE,
+            21 | 22 | 23 | 24 | 25 => ORANGE_RED,
+            26 | 27 | 28 => ORANGE,
+            29 | 30 => ORANGE_YELLOW,
+            _ => WHITE,
         }
     }
 }
