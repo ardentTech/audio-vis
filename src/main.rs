@@ -5,7 +5,7 @@ mod display;
 mod colors;
 mod patterns;
 
-use defmt::{debug, info, unwrap};
+use defmt::{debug, unwrap};
 #[allow(unused_imports)]
 use {defmt_rtt as _, panic_probe as _};
 use embassy_executor::Spawner;
@@ -18,13 +18,11 @@ use embassy_rp::pio::Pio;
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_sync::channel;
 use embassy_sync::signal::Signal;
-use embedded_graphics::geometry::Point;
 use embedded_graphics::pixelcolor::Rgb888;
 use microfft::Complex32;
-use rp_hub75::{on_dma_irq, Hub75Pins16, Hub75, Hub75Config, hub75_descriptors, Hub75Swap};
-use crate::colors::{BLUE, BLUE_OCEAN, BLUE_VIOLET, CYAN, CYAN_OCEAN, CYAN_TURQUOISE, GREEN, GREEN_SPRING_GREEN, GREEN_TURQUOISE, MAGENTA, MAGENTA_ROSE, OCEAN, ORANGE, ROSE, RED, RED_ORANGE, RED_ROSE, SPRING_GREEN, TURQUOISE, VIOLET, VIOLET_MAGENTA, YELLOW, YELLOW_ORANGE, YELLOW_SPRING_GREEN, ROSE_RED, ORANGE_RED, ORANGE_YELLOW, SPRING_GREEN_YELLOW, SPRING_GREEN_GREEN, ROSE_MAGENTA};
-use crate::display::{Fb, PANEL_CLOCK_HZ, PANEL_HEIGHT, PANEL_WIDTH};
-use crate::patterns::{BlueGreen, ColorPattern, RedYellow};
+use rp_hub75::{on_dma_irq, Hub75Pins16, Hub75, Hub75Config, hub75_descriptors};
+use crate::display::{Fb, PANEL_CLOCK_HZ, PANEL_WIDTH};
+use crate::patterns::ColorPattern;
 
 /// The driver's frame-boundary work, in the DMA interrupt.
 struct DmaIrqHandler;
@@ -48,7 +46,7 @@ macro_rules! mk_static {
 
 const ADC_RESOLUTION: i32 = 4096;
 const MIC_SAMPLE_BLOCK_SIZE: usize = PANEL_WIDTH * 2;
-const READS_PER_SAMPLE: usize = 64;
+const READS_PER_SAMPLE: usize = 24;
 
 // TODO this is a command... need trait?
 struct ProcessSamples([f32; MIC_SAMPLE_BLOCK_SIZE]);
@@ -64,25 +62,13 @@ enum Event {
 static EVENT_CHANNEL: channel::Channel<CriticalSectionRawMutex, Event, 10> = channel::Channel::new();
 static PROCESS_SAMPLES_HANDLER: Signal<CriticalSectionRawMutex, ProcessSamples> = Signal::new();
 static DRAW_AMPLITUDES_HANDLER: Signal<CriticalSectionRawMutex, DrawSamples> = Signal::new();
-
+// TODO active color pattern
 
 bind_interrupts!(struct Irqs {
     ADC_IRQ_FIFO => InterruptHandler;
     DMA_IRQ_0 => DmaIrqHandler;
     PIO0_IRQ_0 => pio::InterruptHandler<PIO0>;
 });
-
-// TODO any harm in using i32s here?
-// TODO write unit tests
-// TODO eventually remove
-// fn map_range(a: i32, in_min: i32, in_max: i32, out_min: i32, out_max: i32) -> i32 {
-//     if a < in_min {
-//         return out_min;
-//     } else if a > in_max {
-//         return out_max;
-//     }
-//     (a - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
-// }
 
 #[embassy_executor::task]
 async fn samples_read_task(
@@ -114,16 +100,7 @@ async fn samples_processing_task() {
     loop {
         let mut samples = PROCESS_SAMPLES_HANDLER.wait().await;
         let spectrum = microfft::real::rfft_128(&mut samples.0);
-        // since the real-valued coefficient at the Nyquist frequency is packed into the
-        // imaginary part of the DC bin, it must be cleared before computing the amplitudes
-        //spectrum[0].im = 0.0;
         spectrum[0].re = 0.0;
-
-        // let mut amplitudes: [u32; PANEL_WIDTH] = [0; PANEL_WIDTH];
-        // spectrum.iter().enumerate().for_each(|(i, v)| {
-        //     // TODO out_max depends on whether or not the drawing mode is mirrored... is PANEL_HEIGHT if not mirrored
-        //     amplitudes[i] = map_range(v.l1_norm() as i32, 0, ADC_RESOLUTION, 0, (PANEL_HEIGHT / 2) as i32) as u32; // TODO so many type casts
-        // });
         sender.send(Event::SamplesProcessed(*spectrum)).await;
     }
 }
@@ -144,8 +121,8 @@ async fn display_task(
 
     // The framebuffers' addresses, taken before they move into the driver. The
     // alignment does not change the picture; the log is where it is checked.
-    let fb0_addr = fb0 as *const Fb as usize;
-    let fb1_addr = fb1 as *const Fb as usize;
+    // let fb0_addr = fb0 as *const Fb as usize;
+    // let fb1_addr = fb1 as *const Fb as usize;
 
 
     let hub75 = Hub75::new(
@@ -164,8 +141,8 @@ async fn display_task(
 
     loop {
         let samples = DRAW_AMPLITUDES_HANDLER.wait().await;
-        BlueGreen::draw(fb, samples.0);
-        //RedYellow::draw(fb, samples.0);
+        ColorPattern::Fire.draw(fb, samples.0);
+
         match hub75.swap(fb) {
             Ok(mut swap) => {
                 swap.wait_for_done().await;
@@ -185,49 +162,6 @@ async fn display_task(
 //         }
 //     }
 // }
-
-fn cool_column_mirror(v: u32) -> Rgb888 {
-    match v {
-        0 => BLUE,
-        1 => BLUE_OCEAN,
-        2 => OCEAN,
-        3 => CYAN_OCEAN,
-        4 => CYAN,
-        5 => CYAN_TURQUOISE,
-        6 => TURQUOISE,
-        7 => GREEN_TURQUOISE,
-        8 => GREEN,
-        9 => GREEN_SPRING_GREEN,
-        10 => SPRING_GREEN,
-        11 => YELLOW_SPRING_GREEN,
-        12 => YELLOW,
-        13 => YELLOW_ORANGE,
-        14 => ORANGE,
-        _ => RED_ORANGE
-    }
-}
-
-fn warm_column_mirror(v: u32) -> Rgb888 {
-    match v {
-        //0 => ROSE_MAGENTA,
-        0 => ROSE,
-        1 => ROSE_RED,
-        2 => RED_ROSE,
-        3 => RED,
-        4 => RED_ORANGE,
-        5 => ORANGE_RED,
-        6 => ORANGE,
-        7 => ORANGE_YELLOW,
-        8 => YELLOW_ORANGE,
-        9 => YELLOW,
-        10 => YELLOW_SPRING_GREEN,
-        11 => SPRING_GREEN_YELLOW,
-        12 => SPRING_GREEN,
-        13 => SPRING_GREEN_GREEN,
-        14 => GREEN_SPRING_GREEN,
-        _ => GREEN,
-    }
-}
 
 #[embassy_executor::task]
 async fn orchestration_task() {
