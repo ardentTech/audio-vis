@@ -19,10 +19,9 @@ pub(crate) enum ColorPattern {
     Cyan,
     Fire,
     Green,
-    // CoolMirrored,
-    //MardiGras,
     Red,
-    // WarmMirrored,
+    Swamp,
+    ThirdEye,
 }
 
 impl ColorPattern {
@@ -31,10 +30,9 @@ impl ColorPattern {
             ColorPattern::Cyan => draw_mirror_column(fb, samples, CYAN),
             ColorPattern::Fire => draw_mirror_column(fb, samples, FIRE),
             ColorPattern::Green => draw_mirror_column(fb, samples, GREEN_YELLOW),
-            // ColorPattern::CoolMirrored => {}
-            //ColorPattern::MardiGras => draw_mirror_column(fb, samples, MARDI_GRAS),
             ColorPattern::Red => draw_mirror_column(fb, samples, WARM),
-            // ColorPattern::WarmMirrored => {}
+            ColorPattern::Swamp => draw_mirror_column(fb, samples, SWAMP),
+            ColorPattern::ThirdEye => draw_mirror_column(fb, samples, THIRD_EYE),
         }
     }
 }
@@ -148,3 +146,60 @@ static FIRE: [Rgb888; 16] = [
     WHITE_14,
     WHITE_15,
 ];
+
+static SWAMP: [Rgb888; 16] = [
+    ORANGE_0,
+    ORANGE_1,
+    ORANGE_2,
+    ORANGE_3,
+    ORANGE_4,
+    YELLOW_5,
+    YELLOW_6,
+    YELLOW_7,
+    YELLOW_8,
+    YELLOW_9,
+    SPRING_GREEN_10,
+    SPRING_GREEN_11,
+    SPRING_GREEN_12,
+    SPRING_GREEN_13,
+    SPRING_GREEN_14,
+    SPRING_GREEN_15,
+];
+
+static THIRD_EYE: [Rgb888; 16] = [
+    BLUE_VIOLET_1,
+    BLUE_VIOLET_2,
+    BLUE_VIOLET_3,
+    BLUE_VIOLET_4,
+    BLUE_VIOLET_5,
+    BLUE_VIOLET_6,
+    BLUE_VIOLET_7,
+    BLUE_VIOLET_8,
+    BLUE_VIOLET_9,
+    BLUE_VIOLET_10,
+    BLUE_VIOLET_11,
+    BLUE_VIOLET_12,
+    BLUE_VIOLET_13,
+    BLUE_VIOLET_14,
+    BLUE_VIOLET_15,
+    WHITE_15
+];
+
+// static THIRD_EYE: [Rgb888; 16] = [
+//     OCEAN_0,
+//     OCEAN_1,
+//     OCEAN_2,
+//     OCEAN_3,
+//     BLUE_4,
+//     BLUE_5,
+//     BLUE_6,
+//     BLUE_7,
+//     VIOLET_8,
+//     VIOLET_9,
+//     VIOLET_10,
+//     VIOLET_11,
+//     WHITE_12,
+//     WHITE_13,
+//     WHITE_14,
+//     WHITE_15,
+// ];
