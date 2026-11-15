@@ -130,22 +130,22 @@ pub(crate) static RED_14: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 1), 0, 0);
 pub(crate) static RED_15: Rgb888 = Rgb888::new(BRIGHTNESS, 0, 0);
 
 // red orange
-pub(crate) static RED_ORANGE_0: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 15), HALF_BRIGHTNESS - (HALF_STEP * 15), 0);
-pub(crate) static RED_ORANGE_1: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 14), HALF_BRIGHTNESS - (HALF_STEP * 14), 0);
-pub(crate) static RED_ORANGE_2: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 13), HALF_BRIGHTNESS - (HALF_STEP * 13), 0);
-pub(crate) static RED_ORANGE_3: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 12), HALF_BRIGHTNESS - (HALF_STEP * 12), 0);
-pub(crate) static RED_ORANGE_4: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 11), HALF_BRIGHTNESS - (HALF_STEP * 11), 0);
-pub(crate) static RED_ORANGE_5: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 10), HALF_BRIGHTNESS - (HALF_STEP * 10), 0);
-pub(crate) static RED_ORANGE_6: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 9), HALF_BRIGHTNESS - (HALF_STEP * 9), 0);
-pub(crate) static RED_ORANGE_7: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 8), HALF_BRIGHTNESS - (HALF_STEP * 8), 0);
-pub(crate) static RED_ORANGE_8: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 7), HALF_BRIGHTNESS - (HALF_STEP * 7), 0);
-pub(crate) static RED_ORANGE_9: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 6), HALF_BRIGHTNESS - (HALF_STEP * 6), 0);
-pub(crate) static RED_ORANGE_10: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 5), HALF_BRIGHTNESS - (HALF_STEP * 5), 0);
-pub(crate) static RED_ORANGE_11: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 4), HALF_BRIGHTNESS - (HALF_STEP * 4), 0);
-pub(crate) static RED_ORANGE_12: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 3), HALF_BRIGHTNESS - (HALF_STEP * 3), 0);
-pub(crate) static RED_ORANGE_13: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 2), HALF_BRIGHTNESS - (HALF_STEP * 2), 0);
-pub(crate) static RED_ORANGE_14: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 1), HALF_BRIGHTNESS - (HALF_STEP * 1), 0);
-pub(crate) static RED_ORANGE_15: Rgb888 = Rgb888::new(BRIGHTNESS, HALF_BRIGHTNESS, 0);
+pub(crate) static RED_ORANGE_0: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 15), QUARTER_BRIGHTNESS - (QUARTER_STEP * 15), 0);
+pub(crate) static RED_ORANGE_1: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 14), QUARTER_BRIGHTNESS - (QUARTER_STEP * 14), 0);
+pub(crate) static RED_ORANGE_2: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 13), QUARTER_BRIGHTNESS - (QUARTER_STEP * 13), 0);
+pub(crate) static RED_ORANGE_3: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 12), QUARTER_BRIGHTNESS - (QUARTER_STEP * 12), 0);
+pub(crate) static RED_ORANGE_4: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 11), QUARTER_BRIGHTNESS - (QUARTER_STEP * 11), 0);
+pub(crate) static RED_ORANGE_5: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 10), QUARTER_BRIGHTNESS - (QUARTER_STEP * 10), 0);
+pub(crate) static RED_ORANGE_6: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 9), QUARTER_BRIGHTNESS - (QUARTER_STEP * 9), 0);
+pub(crate) static RED_ORANGE_7: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 8), QUARTER_BRIGHTNESS - (QUARTER_STEP * 8), 0);
+pub(crate) static RED_ORANGE_8: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 7), QUARTER_BRIGHTNESS - (QUARTER_STEP * 7), 0);
+pub(crate) static RED_ORANGE_9: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 6), QUARTER_BRIGHTNESS - (QUARTER_STEP * 6), 0);
+pub(crate) static RED_ORANGE_10: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 5), QUARTER_BRIGHTNESS - (QUARTER_STEP * 5), 0);
+pub(crate) static RED_ORANGE_11: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 4), QUARTER_BRIGHTNESS - (QUARTER_STEP * 4), 0);
+pub(crate) static RED_ORANGE_12: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 3), QUARTER_BRIGHTNESS - (QUARTER_STEP * 3), 0);
+pub(crate) static RED_ORANGE_13: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 2), QUARTER_BRIGHTNESS - (QUARTER_STEP * 2), 0);
+pub(crate) static RED_ORANGE_14: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 1), QUARTER_BRIGHTNESS - (QUARTER_STEP * 1), 0);
+pub(crate) static RED_ORANGE_15: Rgb888 = Rgb888::new(BRIGHTNESS, QUARTER_BRIGHTNESS, 0);
 
 // spring green
 pub(crate) static SPRING_GREEN_0: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 15), BRIGHTNESS - (STEP * 15), 0);

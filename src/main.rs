@@ -46,7 +46,7 @@ macro_rules! mk_static {
 
 const ADC_RESOLUTION: i32 = 4096;
 const MIC_SAMPLE_BLOCK_SIZE: usize = PANEL_WIDTH * 2;
-const READS_PER_SAMPLE: usize = 24;
+const READS_PER_SAMPLE: usize = 48;
 
 // TODO this is a command... need trait?
 struct ProcessSamples([f32; MIC_SAMPLE_BLOCK_SIZE]);
@@ -141,7 +141,7 @@ async fn display_task(
 
     loop {
         let samples = DRAW_AMPLITUDES_HANDLER.wait().await;
-        ColorPattern::ThirdEye.draw(fb, samples.0);
+        ColorPattern::FireIce.draw(fb, samples.0);
 
         match hub75.swap(fb) {
             Ok(mut swap) => {
@@ -152,16 +152,6 @@ async fn display_task(
         }
     }
 }
-
-// fn draw(fb: &mut Fb, amplitudes: [u32; PANEL_WIDTH]) {
-//     fb.erase();
-//     for (col, v) in amplitudes.iter().enumerate() {
-//         for i in 0..*v {
-//             fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT / 2) - 1) as i32 - i as i32), warm_column_mirror(i));
-//             fb.set_pixel(Point::new(col as i32, (PANEL_HEIGHT / 2) as i32 + i as i32), warm_column_mirror(i));
-//         }
-//     }
-// }
 
 #[embassy_executor::task]
 async fn orchestration_task() {
