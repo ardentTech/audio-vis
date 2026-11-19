@@ -1,8 +1,8 @@
 use embedded_graphics::pixelcolor::Rgb888;
 
-const BRIGHTNESS: u8 = 128;
-const HALF_BRIGHTNESS: u8 = BRIGHTNESS / 2;
-const QUARTER_BRIGHTNESS: u8 = BRIGHTNESS / 4;
+pub(crate) const BRIGHTNESS: u8 = 255;
+pub(crate) const HALF_BRIGHTNESS: u8 = BRIGHTNESS / 2;
+pub(crate) const QUARTER_BRIGHTNESS: u8 = BRIGHTNESS / 4;
 
 const STEP: u8 = BRIGHTNESS / 16;
 const HALF_STEP: u8 = BRIGHTNESS / 32;
@@ -24,6 +24,24 @@ pub(crate) static BLUE_12: Rgb888 = Rgb888::new(0, 0, BRIGHTNESS - (STEP * 3));
 pub(crate) static BLUE_13: Rgb888 = Rgb888::new(0, 0, BRIGHTNESS - (STEP * 2));
 pub(crate) static BLUE_14: Rgb888 = Rgb888::new(0, 0, BRIGHTNESS - (STEP * 1));
 pub(crate) static BLUE_15: Rgb888 = Rgb888::new(0, 0, BRIGHTNESS);
+
+// blue ocean
+pub(crate) static BLUE_OCEAN_0: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 15), BRIGHTNESS - (STEP * 15));
+pub(crate) static BLUE_OCEAN_1: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 14), BRIGHTNESS - (STEP * 14));
+pub(crate) static BLUE_OCEAN_2: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 13), BRIGHTNESS - (STEP * 13));
+pub(crate) static BLUE_OCEAN_3: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 12), BRIGHTNESS - (STEP * 12));
+pub(crate) static BLUE_OCEAN_4: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 11), BRIGHTNESS - (STEP * 11));
+pub(crate) static BLUE_OCEAN_5: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 10), BRIGHTNESS - (STEP * 10));
+pub(crate) static BLUE_OCEAN_6: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 9), BRIGHTNESS - (STEP * 9));
+pub(crate) static BLUE_OCEAN_7: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 8), BRIGHTNESS - (STEP * 8));
+pub(crate) static BLUE_OCEAN_8: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 7), BRIGHTNESS - (STEP * 7));
+pub(crate) static BLUE_OCEAN_9: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 6), BRIGHTNESS - (STEP * 6));
+pub(crate) static BLUE_OCEAN_10: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 5), BRIGHTNESS - (STEP * 5));
+pub(crate) static BLUE_OCEAN_11: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 4), BRIGHTNESS - (STEP * 4));
+pub(crate) static BLUE_OCEAN_12: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 3), BRIGHTNESS - (STEP * 3));
+pub(crate) static BLUE_OCEAN_13: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 2), BRIGHTNESS - (STEP * 2));
+pub(crate) static BLUE_OCEAN_14: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 1), BRIGHTNESS - (STEP * 1));
+pub(crate) static BLUE_OCEAN_15: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS, BRIGHTNESS);
 
 // blue violet
 pub(crate) static BLUE_VIOLET_0: Rgb888 = Rgb888::new(QUARTER_BRIGHTNESS - (QUARTER_STEP * 15), 0, BRIGHTNESS - (STEP * 15));

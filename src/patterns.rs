@@ -21,11 +21,8 @@ fn map_range(a: i32, in_min: i32, in_max: i32, out_min: i32, out_max: i32) -> i3
 }
 
 pub(crate) enum ColorPattern {
-    Cyan,
     Fire,
     FireIce,
-    Green,
-    Red,
     Swamp,
     Tess,
 }
@@ -33,11 +30,10 @@ pub(crate) enum ColorPattern {
 impl ColorPattern {
     pub(crate) fn draw(&mut self, fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
         match self {
-            ColorPattern::Cyan => draw_mirror_column(fb, samples, CYAN_FADE_IN),
             ColorPattern::Fire => {
                 match FIRE_I.load(Ordering::Relaxed) {
                     0 => {
-                        draw_split_column(fb, samples, RED_ORANGE_FADE_IN, YELLOW_FADE_IN);
+                        draw_split_column(fb, samples, ORANGE_FADE_IN, YELLOW_FADE_IN);
                         FIRE_I.store(1, Ordering::Relaxed);
                     },
                     _ => {
@@ -47,10 +43,8 @@ impl ColorPattern {
                 }
             },
             ColorPattern::FireIce => {
-                draw_split_column(fb, samples, RED_ORANGE_FADE_IN, OCEAN_FADE_IN);
+                draw_split_column(fb, samples, ORANGE_FADE_IN, OCEAN_FADE_IN);
             },
-            ColorPattern::Green => draw_mirror_column(fb, samples, GREEN_YELLOW),
-            ColorPattern::Red => draw_mirror_column(fb, samples, RED_FADE_IN),
             ColorPattern::Swamp => {
                 match SWAMP_I.load(Ordering::Relaxed) {
                     0 => {
@@ -68,7 +62,7 @@ impl ColorPattern {
                 }
             },
             ColorPattern::Tess => {
-                draw_split_column(fb, samples, BLUE_VIOLET_FADE_IN, OCEAN_FADE_IN);
+                draw_split_column(fb, samples, VIOLET_FADE_IN, OCEAN_FADE_IN);
             },
         }
     }
@@ -103,41 +97,22 @@ fn draw_split_column(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH], pattern1: [
 }
 
 static OCEAN_FADE_IN: [Rgb888; 16] = [
-    OCEAN_0,
-    OCEAN_1,
-    OCEAN_2,
-    OCEAN_3,
-    OCEAN_4,
-    OCEAN_5,
-    OCEAN_6,
-    OCEAN_7,
-    OCEAN_8,
-    OCEAN_9,
-    OCEAN_10,
-    OCEAN_11,
-    OCEAN_12,
-    OCEAN_13,
-    OCEAN_14,
-    OCEAN_15,
-];
-
-static CYAN_FADE_IN: [Rgb888; 16] = [
-    CYAN_0,
-    CYAN_1,
-    CYAN_2,
-    CYAN_3,
-    CYAN_4,
-    CYAN_5,
-    CYAN_6,
-    CYAN_7,
-    CYAN_8,
-    CYAN_9,
-    CYAN_10,
-    CYAN_11,
-    CYAN_12,
-    CYAN_13,
-    CYAN_14,
-    CYAN_15,
+    Rgb888::new(0, 4, 8),
+    Rgb888::new(0, 4, 8),
+    Rgb888::new(0, 4, 8),
+    Rgb888::new(0, 4, 8),
+    Rgb888::new(0, 8, 16),
+    Rgb888::new(0, 8, 16),
+    Rgb888::new(0, 8, 16),
+    Rgb888::new(0, 16, 32),
+    Rgb888::new(0, 16, 32),
+    Rgb888::new(0, 16, 32),
+    Rgb888::new(0, 32, 64),
+    Rgb888::new(0, 32, 64),
+    Rgb888::new(0, 64, 128),
+    Rgb888::new(0, 64, 128),
+    Rgb888::new(0, 128, 255),
+    Rgb888::new(128, 128, 255),
 ];
 
 static GREEN_FADE_IN: [Rgb888; 16] = [
@@ -179,98 +154,60 @@ static GREEN_YELLOW: [Rgb888; 16] = [
 ];
 
 static RED_FADE_IN: [Rgb888; 16] = [
-    RED_0,
-    RED_1,
-    RED_2,
-    RED_3,
-    RED_4,
-    RED_5,
-    RED_6,
-    RED_7,
-    RED_8,
-    RED_9,
-    RED_10,
-    RED_11,
-    RED_12,
-    RED_13,
-    RED_14,
-    RED_15,
+    Rgb888::new(8, 0, 0),
+    Rgb888::new(8, 0, 0),
+    Rgb888::new(8, 0, 0),
+    Rgb888::new(8, 0, 0),
+    Rgb888::new(16, 0, 0),
+    Rgb888::new(16, 0, 0),
+    Rgb888::new(16, 0, 0),
+    Rgb888::new(32, 0, 0),
+    Rgb888::new(32, 0, 0),
+    Rgb888::new(32, 0, 0),
+    Rgb888::new(64, 0, 0),
+    Rgb888::new(64, 0, 0),
+    Rgb888::new(128, 0, 0),
+    Rgb888::new(128, 0, 0),
+    Rgb888::new(255, 0, 0),
+    Rgb888::new(255, 128, 128),
 ];
-
-static RED_ORANGE_FADE_IN: [Rgb888; 16] = [
-    RED_ORANGE_0,
-    RED_ORANGE_1,
-    RED_ORANGE_2,
-    RED_ORANGE_3,
-    RED_ORANGE_4,
-    RED_ORANGE_5,
-    RED_ORANGE_6,
-    RED_ORANGE_7,
-    RED_ORANGE_8,
-    RED_ORANGE_9,
-    RED_ORANGE_10,
-    RED_ORANGE_11,
-    RED_ORANGE_12,
-    RED_ORANGE_13,
-    RED_ORANGE_14,
-    RED_ORANGE_15,
-];
-
-// static FIRE: [Rgb888; 16] = [
-//     RED_0,
-//     RED_1,
-//     RED_2,
-//     RED_ORANGE_3,
-//     RED_ORANGE_4,
-//     RED_ORANGE_5,
-//     ORANGE_6,
-//     ORANGE_7,
-//     ORANGE_8,
-//     ORANGE_9,
-//     YELLOW_10,
-//     YELLOW_11,
-//     YELLOW_12,
-//     YELLOW_13,
-//     WHITE_14,
-//     WHITE_15,
-// ];
 
 static ORANGE_FADE_IN: [Rgb888; 16] = [
-    ORANGE_0,
-    ORANGE_1,
-    ORANGE_2,
-    ORANGE_3,
-    ORANGE_4,
-    ORANGE_5,
-    ORANGE_6,
-    ORANGE_7,
-    ORANGE_8,
-    ORANGE_9,
-    ORANGE_10,
-    ORANGE_11,
-    ORANGE_12,
-    ORANGE_13,
-    ORANGE_14,
-    ORANGE_15,
+    Rgb888::new(8, 4, 0),
+    Rgb888::new(8, 4, 0),
+    Rgb888::new(8, 4, 0),
+    Rgb888::new(8, 4, 0),
+    Rgb888::new(16, 8, 0),
+    Rgb888::new(16, 8, 0),
+    Rgb888::new(16, 8, 0),
+    Rgb888::new(32, 16, 0),
+    Rgb888::new(32, 16, 0),
+    Rgb888::new(32, 16, 0),
+    Rgb888::new(64, 32, 0),
+    Rgb888::new(64, 32, 0),
+    Rgb888::new(128, 64, 0),
+    Rgb888::new(128, 64, 0),
+    Rgb888::new(255, 128, 0),
+    Rgb888::new(255, 128, 128),
 ];
 
 static YELLOW_FADE_IN: [Rgb888; 16] = [
-    YELLOW_0,
-    YELLOW_1,
-    YELLOW_2,
-    YELLOW_3,
-    YELLOW_4,
-    YELLOW_5,
-    YELLOW_6,
-    YELLOW_7,
-    YELLOW_8,
-    YELLOW_9,
-    YELLOW_10,
-    YELLOW_11,
-    YELLOW_12,
-    YELLOW_13,
-    YELLOW_14,
-    YELLOW_15,
+    Rgb888::new(8, 8, 0),
+    Rgb888::new(8, 8, 0),
+    Rgb888::new(8, 8, 0),
+    Rgb888::new(8, 8, 0),
+    Rgb888::new(16, 16, 0),
+    Rgb888::new(16, 16, 0),
+    Rgb888::new(16, 16, 0),
+    Rgb888::new(32, 32, 0),
+    Rgb888::new(32, 32, 0),
+    Rgb888::new(32, 32, 0),
+    Rgb888::new(64, 64, 0),
+    Rgb888::new(64, 64, 0),
+    Rgb888::new(128, 128, 0),
+    Rgb888::new(128, 128, 0),
+    Rgb888::new(255, 255, 0),
+    Rgb888::new(255, 255, 128),
 ];
 
 static SPRING_GREEN_FADE_IN: [Rgb888; 16] = [
@@ -292,78 +229,59 @@ static SPRING_GREEN_FADE_IN: [Rgb888; 16] = [
     SPRING_GREEN_15,
 ];
 
-static BLUE_VIOLET_FADE_IN: [Rgb888; 16] = [
-    BLUE_VIOLET_1,
-    BLUE_VIOLET_2,
-    BLUE_VIOLET_3,
-    BLUE_VIOLET_4,
-    BLUE_VIOLET_5,
-    BLUE_VIOLET_6,
-    BLUE_VIOLET_7,
-    BLUE_VIOLET_8,
-    BLUE_VIOLET_9,
-    BLUE_VIOLET_10,
-    BLUE_VIOLET_11,
-    BLUE_VIOLET_12,
-    BLUE_VIOLET_13,
-    BLUE_VIOLET_14,
-    BLUE_VIOLET_15,
-    BLUE_VIOLET_15,
-];
-
-static OCEAN_TO_BLUE_VIOLET: [Rgb888; 16] = [
-    OCEAN_1,
-    BLUE_VIOLET_2,
-    BLUE_VIOLET_3,
-    BLUE_VIOLET_4,
-    BLUE_VIOLET_5,
-    BLUE_VIOLET_6,
-    BLUE_VIOLET_7,
-    BLUE_VIOLET_8,
-    BLUE_VIOLET_9,
-    BLUE_VIOLET_10,
-    BLUE_VIOLET_11,
-    BLUE_VIOLET_12,
-    BLUE_VIOLET_13,
-    BLUE_VIOLET_14,
-    BLUE_VIOLET_15,
-    BLUE_VIOLET_15,
-];
-
 static BLUE_FADE_IN: [Rgb888; 16] = [
-    BLUE_0,
-    BLUE_1,
-    BLUE_2,
-    BLUE_3,
-    BLUE_4,
-    BLUE_5,
-    BLUE_6,
-    BLUE_7,
-    BLUE_8,
-    BLUE_9,
-    BLUE_10,
-    BLUE_11,
-    BLUE_12,
-    BLUE_13,
-    BLUE_14,
-    BLUE_15,
+    Rgb888::new(0, 0, 8),
+    Rgb888::new(0, 0, 8),
+    Rgb888::new(0, 0, 8),
+    Rgb888::new(0, 0, 8),
+    Rgb888::new(0, 0, 16),
+    Rgb888::new(0, 0, 16),
+    Rgb888::new(0, 0, 16),
+    Rgb888::new(0, 0, 32),
+    Rgb888::new(0, 0, 32),
+    Rgb888::new(0, 0, 32),
+    Rgb888::new(0, 0, 64),
+    Rgb888::new(0, 0, 64),
+    Rgb888::new(0, 0, 128),
+    Rgb888::new(0, 0, 128),
+    Rgb888::new(0, 0, 255),
+    Rgb888::new(128, 128, 255),
+];
+
+static VIOLET_FADE_IN: [Rgb888; 16] = [
+    Rgb888::new(4, 0, 8),
+    Rgb888::new(4, 0, 8),
+    Rgb888::new(4, 0, 8),
+    Rgb888::new(4, 0, 8),
+    Rgb888::new(8, 0, 16),
+    Rgb888::new(8, 0, 16),
+    Rgb888::new(8, 0, 16),
+    Rgb888::new(16, 0, 32),
+    Rgb888::new(16, 0, 32),
+    Rgb888::new(16, 0, 32),
+    Rgb888::new(32, 0, 64),
+    Rgb888::new(32, 0, 64),
+    Rgb888::new(64, 0, 128),
+    Rgb888::new(64, 0, 128),
+    Rgb888::new(128, 0, 255),
+    Rgb888::new(128, 128, 255),
 ];
 
 static WHITE_FADE_IN: [Rgb888; 16] = [
-    WHITE_0,
-    WHITE_1,
-    WHITE_2,
-    WHITE_3,
-    WHITE_4,
-    WHITE_5,
-    WHITE_6,
-    WHITE_7,
-    WHITE_8,
-    WHITE_9,
-    WHITE_10,
-    WHITE_11,
-    WHITE_12,
-    WHITE_13,
-    WHITE_14,
-    WHITE_15,
+    Rgb888::new(2, 2, 2),
+    Rgb888::new(2, 2, 2),
+    Rgb888::new(4, 4, 4),
+    Rgb888::new(4, 4, 4),
+    Rgb888::new(8, 8, 8),
+    Rgb888::new(8, 8, 8),
+    Rgb888::new(16, 16, 16),
+    Rgb888::new(16, 16, 16),
+    Rgb888::new(32, 32, 32),
+    Rgb888::new(32, 32, 32),
+    Rgb888::new(64, 64, 64),
+    Rgb888::new(64, 64, 64),
+    Rgb888::new(128, 128, 128),
+    Rgb888::new(128,  128, 128),
+    Rgb888::new(255, 255, 255),
+    Rgb888::new(255, 255, 255),
 ];
