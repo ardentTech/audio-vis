@@ -9,7 +9,7 @@ use crate::display::{Fb, PANEL_HEIGHT, PANEL_WIDTH};
 
 static FIRE_I: AtomicU8 = AtomicU8::new(0);
 static SWAMP_I: AtomicU8 = AtomicU8::new(0);
-static THIRD_EYE_I: AtomicU8 = AtomicU8::new(0);
+static TESS: AtomicU8 = AtomicU8::new(0);
 
 fn map_range(a: i32, in_min: i32, in_max: i32, out_min: i32, out_max: i32) -> i32 {
     if a < in_min {
@@ -27,7 +27,7 @@ pub(crate) enum ColorPattern {
     Green,
     Red,
     Swamp,
-    ThirdEye,
+    Tess,
 }
 
 impl ColorPattern {
@@ -67,21 +67,8 @@ impl ColorPattern {
                     }
                 }
             },
-            ColorPattern::ThirdEye => {
-                match THIRD_EYE_I.load(Ordering::Relaxed) {
-                    0 => {
-                        draw_mirror_column(fb, samples, BLUE_VIOLET_FADE_IN);
-                        THIRD_EYE_I.store(1, Ordering::Relaxed);
-                    },
-                    1 => {
-                        draw_mirror_column(fb, samples, BLUE_FADE_IN);
-                        THIRD_EYE_I.store(2, Ordering::Relaxed);
-                    },
-                    _ => {
-                        draw_mirror_column(fb, samples, OCEAN_FADE_IN);
-                        THIRD_EYE_I.store(0, Ordering::Relaxed);
-                    }
-                }
+            ColorPattern::Tess => {
+                draw_split_column(fb, samples, BLUE_VIOLET_FADE_IN, OCEAN_FADE_IN);
             },
         }
     }
@@ -307,6 +294,25 @@ static SPRING_GREEN_FADE_IN: [Rgb888; 16] = [
 
 static BLUE_VIOLET_FADE_IN: [Rgb888; 16] = [
     BLUE_VIOLET_1,
+    BLUE_VIOLET_2,
+    BLUE_VIOLET_3,
+    BLUE_VIOLET_4,
+    BLUE_VIOLET_5,
+    BLUE_VIOLET_6,
+    BLUE_VIOLET_7,
+    BLUE_VIOLET_8,
+    BLUE_VIOLET_9,
+    BLUE_VIOLET_10,
+    BLUE_VIOLET_11,
+    BLUE_VIOLET_12,
+    BLUE_VIOLET_13,
+    BLUE_VIOLET_14,
+    BLUE_VIOLET_15,
+    BLUE_VIOLET_15,
+];
+
+static OCEAN_TO_BLUE_VIOLET: [Rgb888; 16] = [
+    OCEAN_1,
     BLUE_VIOLET_2,
     BLUE_VIOLET_3,
     BLUE_VIOLET_4,

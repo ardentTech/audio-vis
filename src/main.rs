@@ -46,7 +46,7 @@ macro_rules! mk_static {
 
 const ADC_RESOLUTION: i32 = 4096;
 const MIC_SAMPLE_BLOCK_SIZE: usize = PANEL_WIDTH * 2;
-const READS_PER_SAMPLE: usize = 48;
+const READS_PER_SAMPLE: usize = 96;
 
 // TODO this is a command... need trait?
 struct ProcessSamples([f32; MIC_SAMPLE_BLOCK_SIZE]);
@@ -141,7 +141,7 @@ async fn display_task(
 
     loop {
         let samples = DRAW_AMPLITUDES_HANDLER.wait().await;
-        ColorPattern::FireIce.draw(fb, samples.0);
+        ColorPattern::Tess.draw(fb, samples.0);
 
         match hub75.swap(fb) {
             Ok(mut swap) => {
