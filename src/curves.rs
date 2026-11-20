@@ -1,0 +1,29 @@
+fn cubic_ease_in(a: f32) -> f32 {
+    a * a * a
+}
+
+fn quad_ease_in_out(a: f32) -> f32 {
+    if a < 0.5 {
+        2f32 * a * a
+    } else {
+        1f32 - (-2f32 * a + 2f32) * (-2f32 * a + 2f32) / 2f32
+    }
+}
+
+fn quint_ease_in(a: f32) -> f32 {
+    a * a * a * a * a
+}
+
+// fn sine_ease_in(a: f32) -> f32 {
+//     1f32 - ((a * PI) / 2f32).cos()
+// }
+
+static CUBIC_EASE_IN: [u8; 16] = [8, 8, 8, 9, 12, 17, 23, 33, 45, 61, 81, 105, 134, 168, 208, 255];
+
+static QUAD_EASE_IN_OUT: [u8; 16] = [8, 10, 16, 27, 43, 62, 87, 115, 147, 175, 200, 219, 235, 246, 252, 255];
+
+static QUINT_EASE_IN: [u8; 16] = [8, 8, 8, 8, 8, 9, 10, 13, 18, 27, 40, 60, 88, 128, 182, 255];
+
+pub(crate) static SINE_EASE_IN: [u8; 16] = [8, 9, 13, 20, 29, 41, 55, 71, 89, 109, 131, 154, 178, 203, 229, 255];
+pub(crate) static SINE_EASE_IN_HALF: [u8; 16] = [4, 5, 7, 10, 15, 22, 28, 36, 45, 55, 66, 76, 89, 102, 115, 128];
+pub(crate) static SINE_EASE_IN_QUARTER: [u8; 16] = [2, 3, 4, 5, 8, 11, 14, 18, 23, 28, 33, 38, 45, 51, 58, 64];

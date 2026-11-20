@@ -4,6 +4,7 @@
 mod display;
 mod colors;
 mod patterns;
+mod curves;
 
 use defmt::{debug, unwrap};
 #[allow(unused_imports)]
@@ -141,7 +142,7 @@ async fn display_task(
 
     loop {
         let samples = DRAW_AMPLITUDES_HANDLER.wait().await;
-        ColorPattern::Tess.draw(fb, samples.0);
+        ColorPattern::Fire.draw(fb, samples.0);
 
         match hub75.swap(fb) {
             Ok(mut swap) => {
