@@ -5,7 +5,9 @@ use microfft::Complex32;
 use crate::ADC_RESOLUTION;
 use crate::curves::{SINE_EASE_IN, SINE_EASE_IN_HALF, SINE_EASE_IN_QUARTER};
 use crate::display::{Fb, PANEL_HEIGHT, PANEL_WIDTH};
-//static MURICA: AtomicU8 = AtomicU8::new(0);
+
+static MURICA_IDX: AtomicU8 = AtomicU8::new(0);
+static MARDI_GRAS_IDX: AtomicU8 = AtomicU8::new(0);
 
 fn map_range(a: i32, in_min: i32, in_max: i32, out_min: i32, out_max: i32) -> i32 {
     if a < in_min {
@@ -17,14 +19,20 @@ fn map_range(a: i32, in_min: i32, in_max: i32, out_min: i32, out_max: i32) -> i3
 }
 
 pub(crate) enum ColorPattern {
+    Clean,
     Fire,
     FireIce,
+    MardiGras,
+    Murica,
     Tess,
 }
 
 impl ColorPattern {
     pub(crate) fn draw(&mut self, fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
         match self {
+            ColorPattern::Clean => {
+                draw_split_column(fb, samples, WHITE_FADE_IN, WHITE_FADE_IN);
+            },
             ColorPattern::Fire => {
                 draw_mirror_column(fb, samples, FIRE);
             },
@@ -41,6 +49,12 @@ impl ColorPattern {
             // },
             ColorPattern::FireIce => {
                 draw_split_column(fb, samples, RED_ORANGE_FADE_IN, OCEAN_FADE_IN);
+            },
+            ColorPattern::MardiGras => {
+                draw_mardi_gras(fb, samples);
+            },
+            ColorPattern::Murica => {
+                draw_murica(fb, samples);
             },
             ColorPattern::Tess => {
                 draw_split_column(fb, samples, VIOLET_FADE_IN, OCEAN_FADE_IN);
@@ -66,6 +80,38 @@ fn draw_mirror_column(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH], pattern: [
             fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT as i32) / 2) + (*v - row - 1) as i32), pattern[row as usize]);
         }
     }
+}
+
+fn draw_mardi_gras(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
+    let amplitudes = calc_amplitudes(samples);
+    fb.erase();
+    let mut idx = MARDI_GRAS_IDX.load(Ordering::Relaxed);
+
+    for (col, v) in amplitudes.iter().enumerate() {
+        for row in 0..*v {
+            fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT as i32) / 2) - (*v - row) as i32), MARDI_GRAS[idx as usize][row as usize]);
+            fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT as i32) / 2) + (*v - row - 1) as i32), MARDI_GRAS[idx as usize][row as usize]);
+        }
+        idx = if idx == 3 { 0 } else { idx + 1 };
+    }
+
+    MARDI_GRAS_IDX.store(if idx == 3 { 0 } else { idx + 1 }, Ordering::Relaxed);
+}
+
+fn draw_murica(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
+    let amplitudes = calc_amplitudes(samples);
+    fb.erase();
+    let mut idx = MURICA_IDX.load(Ordering::Relaxed);
+
+    for (col, v) in amplitudes.iter().enumerate() {
+        for row in 0..*v {
+            fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT as i32) / 2) - (*v - row) as i32), MURICA[idx as usize][row as usize]);
+            fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT as i32) / 2) + (*v - row - 1) as i32), MURICA[idx as usize][row as usize]);
+        }
+        idx = if idx == 2 { 0 } else { idx + 1 };
+    }
+
+    MURICA_IDX.store(if idx == 2 { 0 } else { idx + 1 }, Ordering::Relaxed);
 }
 
 fn draw_split_column(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH], pattern1: [Rgb888; 16], pattern2: [Rgb888; 16]) {
@@ -135,6 +181,10 @@ static GREEN_FADE_IN: [Rgb888; 16] = [
     Rgb888::new(0, SINE_EASE_IN[14], 0),
     Rgb888::new(0, SINE_EASE_IN[15], 0),
 ];
+
+static MARDI_GRAS: [[Rgb888; 16]; 4] = [GREEN_FADE_IN, WHITE_FADE_IN, VIOLET_FADE_IN, YELLOW_FADE_IN];
+
+static MURICA: [[Rgb888; 16]; 3] = [RED_FADE_IN, WHITE_FADE_IN, BLUE_FADE_IN];
 
 static OCEAN_FADE_IN: [Rgb888; 16] = [
     Rgb888::new(0, SINE_EASE_IN_HALF[0], SINE_EASE_IN[0]),
