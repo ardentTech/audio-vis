@@ -8,6 +8,8 @@ use crate::display::{Fb, PANEL_HEIGHT, PANEL_WIDTH};
 
 static MURICA_IDX: AtomicU8 = AtomicU8::new(0);
 static MARDI_GRAS_IDX: AtomicU8 = AtomicU8::new(0);
+static SWAMP_IDX: AtomicU8 = AtomicU8::new(0);
+static XMAS_IDX: AtomicU8 = AtomicU8::new(0);
 
 fn map_range(a: i32, in_min: i32, in_max: i32, out_min: i32, out_max: i32) -> i32 {
     if a < in_min {
@@ -24,7 +26,9 @@ pub(crate) enum ColorPattern {
     FireIce,
     MardiGras,
     Murica,
+    Swamp,
     Tess,
+    Xmas,
 }
 
 impl ColorPattern {
@@ -36,17 +40,6 @@ impl ColorPattern {
             ColorPattern::Fire => {
                 draw_mirror_column(fb, samples, FIRE);
             },
-            //     match FIRE_I.load(Ordering::Relaxed) {
-            //         0 => {
-            //             draw_split_column(fb, samples, ORANGE_FADE_IN, YELLOW_FADE_IN);
-            //             FIRE_I.store(1, Ordering::Relaxed);
-            //         },
-            //         _ => {
-            //             draw_split_column(fb, samples, RED_ORANGE_FADE_IN, ORANGE_FADE_IN);
-            //             FIRE_I.store(0, Ordering::Relaxed);
-            //         },
-            //     }
-            // },
             ColorPattern::FireIce => {
                 draw_split_column(fb, samples, RED_ORANGE_FADE_IN, OCEAN_FADE_IN);
             },
@@ -56,8 +49,14 @@ impl ColorPattern {
             ColorPattern::Murica => {
                 draw_murica(fb, samples);
             },
+            ColorPattern::Swamp => {
+                draw_swamp(fb, samples);
+            },
             ColorPattern::Tess => {
                 draw_split_column(fb, samples, VIOLET_FADE_IN, OCEAN_FADE_IN);
+            },
+            ColorPattern::Xmas => {
+                draw_xmas(fb, samples);
             },
         }
     }
@@ -125,6 +124,38 @@ fn draw_split_column(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH], pattern1: [
     }
 }
 
+fn draw_swamp(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
+    let amplitudes = calc_amplitudes(samples);
+    fb.erase();
+    let mut idx = MARDI_GRAS_IDX.load(Ordering::Relaxed);
+
+    for (col, v) in amplitudes.iter().enumerate() {
+        for row in 0..*v {
+            fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT as i32) / 2) - (*v - row) as i32), SWAMP[idx as usize][row as usize]);
+            fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT as i32) / 2) + (*v - row - 1) as i32), SWAMP[idx as usize][row as usize]);
+        }
+        idx = if idx == 3 { 0 } else { idx + 1 };
+    }
+
+    MARDI_GRAS_IDX.store(if idx == 3 { 0 } else { idx + 1 }, Ordering::Relaxed);
+}
+
+fn draw_xmas(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
+    let amplitudes = calc_amplitudes(samples);
+    fb.erase();
+    let mut idx = XMAS_IDX.load(Ordering::Relaxed);
+
+    for (col, v) in amplitudes.iter().enumerate() {
+        for row in 0..*v {
+            fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT as i32) / 2) - (*v - row) as i32), XMAS[idx as usize][row as usize]);
+            fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT as i32) / 2) + (*v - row - 1) as i32), XMAS[idx as usize][row as usize]);
+        }
+        idx = if idx == 2 { 0 } else { idx + 1 };
+    }
+
+    XMAS_IDX.store(if idx == 2 { 0 } else { idx + 1 }, Ordering::Relaxed);
+}
+
 static BLUE_FADE_IN: [Rgb888; 16] = [
     Rgb888::new(0, 0, SINE_EASE_IN[0]),
     Rgb888::new(0, 0, SINE_EASE_IN[1]),
@@ -179,7 +210,7 @@ static GREEN_FADE_IN: [Rgb888; 16] = [
     Rgb888::new(0, SINE_EASE_IN[12], 0),
     Rgb888::new(0, SINE_EASE_IN[13], 0),
     Rgb888::new(0, SINE_EASE_IN[14], 0),
-    Rgb888::new(0, SINE_EASE_IN[15], 0),
+    Rgb888::new(0, SINE_EASE_IN[15], 0), // TODO: half, full, half?
 ];
 
 static MARDI_GRAS: [[Rgb888; 16]; 4] = [GREEN_FADE_IN, WHITE_FADE_IN, VIOLET_FADE_IN, YELLOW_FADE_IN];
@@ -240,7 +271,7 @@ static RED_FADE_IN: [Rgb888; 16] = [
     Rgb888::new(SINE_EASE_IN[12], 0, 0),
     Rgb888::new(SINE_EASE_IN[13], 0, 0),
     Rgb888::new(SINE_EASE_IN[14], 0, 0),
-    Rgb888::new(SINE_EASE_IN[15], 0, 0),
+    Rgb888::new(SINE_EASE_IN[15], 0, 0), // TODO: full, half, half?
 ];
 
 static RED_ORANGE_FADE_IN: [Rgb888; 16] = [
@@ -261,6 +292,27 @@ static RED_ORANGE_FADE_IN: [Rgb888; 16] = [
     Rgb888::new(SINE_EASE_IN[14], SINE_EASE_IN_QUARTER[14], 0),
     Rgb888::new(SINE_EASE_IN[15], SINE_EASE_IN_QUARTER[15], SINE_EASE_IN_QUARTER[15]),
 ];
+
+static SPRING_GREEN_FADE_IN: [Rgb888; 16] = [
+    Rgb888::new(SINE_EASE_IN_HALF[0], SINE_EASE_IN[0], 0),
+    Rgb888::new(SINE_EASE_IN_HALF[1], SINE_EASE_IN[1], 0),
+    Rgb888::new(SINE_EASE_IN_HALF[2], SINE_EASE_IN[2], 0),
+    Rgb888::new(SINE_EASE_IN_HALF[3], SINE_EASE_IN[3], 0),
+    Rgb888::new(SINE_EASE_IN_HALF[4], SINE_EASE_IN[4], 0),
+    Rgb888::new(SINE_EASE_IN_HALF[5], SINE_EASE_IN[5], 0),
+    Rgb888::new(SINE_EASE_IN_HALF[6], SINE_EASE_IN[6], 0),
+    Rgb888::new(SINE_EASE_IN_HALF[7], SINE_EASE_IN[7], 0),
+    Rgb888::new(SINE_EASE_IN_HALF[8], SINE_EASE_IN[8], 0),
+    Rgb888::new(SINE_EASE_IN_HALF[9], SINE_EASE_IN[9], 0),
+    Rgb888::new(SINE_EASE_IN_HALF[10], SINE_EASE_IN[10], 0),
+    Rgb888::new(SINE_EASE_IN_HALF[11], SINE_EASE_IN[11], 0),
+    Rgb888::new(SINE_EASE_IN_HALF[12], SINE_EASE_IN[12], 0),
+    Rgb888::new(SINE_EASE_IN_HALF[13], SINE_EASE_IN[13], 0),
+    Rgb888::new(SINE_EASE_IN_HALF[14], SINE_EASE_IN[14], 0),
+    Rgb888::new(SINE_EASE_IN_HALF[15], SINE_EASE_IN[15], SINE_EASE_IN_HALF[15]),
+];
+
+static SWAMP: [[Rgb888; 16]; 4] = [SPRING_GREEN_FADE_IN, RED_ORANGE_FADE_IN, ORANGE_FADE_IN, YELLOW_FADE_IN];
 
 static VIOLET_FADE_IN: [Rgb888; 16] = [
     Rgb888::new(SINE_EASE_IN_HALF[0], 0, SINE_EASE_IN[0]),
@@ -299,6 +351,8 @@ static WHITE_FADE_IN: [Rgb888; 16] = [
     Rgb888::new(SINE_EASE_IN[14], SINE_EASE_IN[14], SINE_EASE_IN[14]),
     Rgb888::new(SINE_EASE_IN[15], SINE_EASE_IN[15], SINE_EASE_IN[15]),
 ];
+
+static XMAS: [[Rgb888; 16]; 3] = [RED_FADE_IN, WHITE_FADE_IN, GREEN_FADE_IN];
 
 static YELLOW_FADE_IN: [Rgb888; 16] = [
     Rgb888::new(SINE_EASE_IN[0], SINE_EASE_IN[0], 0),

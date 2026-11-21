@@ -142,7 +142,7 @@ async fn display_task(
 
     loop {
         let samples = DRAW_AMPLITUDES_HANDLER.wait().await;
-        ColorPattern::MardiGras.draw(fb, samples.0);
+        ColorPattern::Tess.draw(fb, samples.0);
 
         match hub75.swap(fb) {
             Ok(mut swap) => {
