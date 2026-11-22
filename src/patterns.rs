@@ -38,7 +38,8 @@ impl ColorPattern {
                 draw_split_column(fb, samples, WHITE_FADE_IN, WHITE_FADE_IN);
             },
             ColorPattern::Fire => {
-                draw_mirror_column(fb, samples, FIRE);
+                //draw_mirror_column(fb, samples, FIRE);
+                draw_split_column(fb, samples, FIRE_TOP, FIRE_BOTTOM);
             },
             ColorPattern::FireIce => {
                 draw_split_column(fb, samples, RED_ORANGE_FADE_IN, OCEAN_FADE_IN);
@@ -127,7 +128,7 @@ fn draw_split_column(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH], pattern1: [
 fn draw_swamp(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
     let amplitudes = calc_amplitudes(samples);
     fb.erase();
-    let mut idx = MARDI_GRAS_IDX.load(Ordering::Relaxed);
+    let mut idx = SWAMP_IDX.load(Ordering::Relaxed);
 
     for (col, v) in amplitudes.iter().enumerate() {
         for row in 0..*v {
@@ -137,7 +138,7 @@ fn draw_swamp(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
         idx = if idx == 3 { 0 } else { idx + 1 };
     }
 
-    MARDI_GRAS_IDX.store(if idx == 3 { 0 } else { idx + 1 }, Ordering::Relaxed);
+    SWAMP_IDX.store(if idx == 3 { 0 } else { idx + 1 }, Ordering::Relaxed);
 }
 
 fn draw_xmas(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
@@ -175,23 +176,42 @@ static BLUE_FADE_IN: [Rgb888; 16] = [
     Rgb888::new(0, 0, SINE_EASE_IN[15]),
 ];
 
-static FIRE: [Rgb888; 16] = [
-    RED_FADE_IN[0],
-    RED_ORANGE_FADE_IN[1],
-    ORANGE_FADE_IN[2],
-    ORANGE_FADE_IN[3],
-    ORANGE_FADE_IN[4],
-    ORANGE_FADE_IN[5],
+static FIRE_TOP: [Rgb888; 16] = [
+    YELLOW_FADE_IN[0],
+    YELLOW_FADE_IN[1],
+    YELLOW_FADE_IN[2],
+    YELLOW_FADE_IN[3],
+    YELLOW_ORANGE_FADE_IN[4],
+    YELLOW_ORANGE_FADE_IN[5],
     YELLOW_ORANGE_FADE_IN[6],
     YELLOW_ORANGE_FADE_IN[7],
     YELLOW_ORANGE_FADE_IN[8],
     YELLOW_ORANGE_FADE_IN[9],
-    YELLOW_FADE_IN[10],
-    YELLOW_FADE_IN[11],
-    YELLOW_FADE_IN[12],
-    YELLOW_FADE_IN[13],
-    WHITE_FADE_IN[14],
-    WHITE_FADE_IN[15],
+    YELLOW_ORANGE_FADE_IN[10],
+    YELLOW_ORANGE_FADE_IN[11],
+    ORANGE_FADE_IN[12],
+    ORANGE_FADE_IN[13],
+    ORANGE_FADE_IN[14],
+    Rgb888::new(SINE_EASE_IN[15], SINE_EASE_IN_HALF[15], 0),
+];
+
+static FIRE_BOTTOM: [Rgb888; 16] = [
+    RED_ORANGE_FADE_IN[2],
+    RED_ORANGE_FADE_IN[2],
+    RED_ORANGE_FADE_IN[3],
+    RED_ORANGE_FADE_IN[3],
+    RED_ORANGE_FADE_IN[4],
+    RED_ORANGE_FADE_IN[5],
+    RED_ORANGE_FADE_IN[6],
+    RED_ORANGE_FADE_IN[7],
+    RED_ORANGE_FADE_IN[8],
+    RED_ORANGE_FADE_IN[9],
+    RED_ORANGE_FADE_IN[10],
+    RED_ORANGE_FADE_IN[11],
+    ORANGE_FADE_IN[12],
+    ORANGE_FADE_IN[13],
+    ORANGE_FADE_IN[14],
+    Rgb888::new(SINE_EASE_IN[15], SINE_EASE_IN_HALF[15], 0),
 ];
 
 static GREEN_FADE_IN: [Rgb888; 16] = [
