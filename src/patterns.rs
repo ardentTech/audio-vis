@@ -3,7 +3,7 @@ use embedded_graphics::geometry::Point;
 use embedded_graphics::pixelcolor::Rgb888;
 use microfft::Complex32;
 use crate::ADC_RESOLUTION;
-use crate::curves::{SINE_EASE_IN, SINE_EASE_IN_HALF, SINE_EASE_IN_QUARTER};
+use crate::curves::{SINE_EASE_IN, SINE_EASE_IN_32, SINE_EASE_IN_HALF, SINE_EASE_IN_QUARTER};
 use crate::display::{Fb, PANEL_HEIGHT, PANEL_WIDTH};
 
 static MURICA_IDX: AtomicU8 = AtomicU8::new(0);
@@ -21,6 +21,7 @@ fn map_range(a: i32, in_min: i32, in_max: i32, out_min: i32, out_max: i32) -> i3
 }
 
 pub(crate) enum ColorPattern {
+    Circular,
     Clean,
     Fire,
     FireIce,
@@ -34,6 +35,9 @@ pub(crate) enum ColorPattern {
 impl ColorPattern {
     pub(crate) fn draw(&mut self, fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
         match self {
+            ColorPattern::Circular => {
+                draw_circular(fb, samples);
+            }
             ColorPattern::Clean => {
                 draw_split_column(fb, samples, WHITE_FADE_IN, WHITE_FADE_IN);
             },
@@ -69,6 +73,18 @@ fn calc_amplitudes(samples: [Complex32; PANEL_WIDTH]) -> [u32; PANEL_WIDTH] {
         amplitudes[i] = map_range(v.l1_norm() as i32, 0, ADC_RESOLUTION, 0, (PANEL_HEIGHT as i32) / 2) as u32; // TODO so many type casts
     });
     amplitudes
+}
+
+fn draw_circular(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
+    let amplitudes = calc_amplitudes(samples);
+    fb.erase();
+
+    for (col, v) in amplitudes.iter().enumerate() {
+        for row in 0..*v {
+            fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT as i32) / 2) - (*v - row) as i32), CIRCULAR[col]);
+            fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT as i32) / 2) + (*v - row - 1) as i32), CIRCULAR[col]);
+        }
+    }
 }
 
 fn draw_mirror_column(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH], pattern: [Rgb888; 16]) {
@@ -174,6 +190,73 @@ static BLUE_FADE_IN: [Rgb888; 16] = [
     Rgb888::new(0, 0, SINE_EASE_IN[13]),
     Rgb888::new(0, 0, SINE_EASE_IN[14]),
     Rgb888::new(0, 0, SINE_EASE_IN[15]),
+];
+
+static CIRCULAR: [Rgb888; 64] = [
+    Rgb888::new(0, 0, SINE_EASE_IN_32[0]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[1]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[2]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[3]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[4]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[5]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[6]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[7]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[8]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[9]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[10]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[11]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[12]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[13]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[14]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[15]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[16]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[17]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[18]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[19]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[20]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[21]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[22]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[23]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[24]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[25]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[26]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[27]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[28]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[29]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[30]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[31]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[31]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[30]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[29]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[28]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[27]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[26]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[25]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[24]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[23]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[22]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[21]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[20]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[19]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[18]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[17]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[16]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[15]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[14]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[13]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[12]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[11]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[10]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[9]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[8]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[7]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[6]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[5]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[4]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[3]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[2]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[1]),
+    Rgb888::new(0, 0, SINE_EASE_IN_32[0]),
 ];
 
 static FIRE_TOP: [Rgb888; 16] = [
