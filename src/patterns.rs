@@ -1,9 +1,11 @@
 use core::sync::atomic::{AtomicU8, Ordering};
+use defmt::info;
 use embedded_graphics::geometry::Point;
 use embedded_graphics::pixelcolor::Rgb888;
 use microfft::Complex32;
 use crate::ADC_RESOLUTION;
-use crate::curves::{SINE_EASE_IN, SINE_EASE_IN_32, SINE_EASE_IN_HALF, SINE_EASE_IN_QUARTER};
+use crate::colors::{GREEN_FADE_IN_32, YELLOW_FADE_IN_32};
+use crate::curves::{SINE_EASE_IN, SINE_EASE_IN_HALF, SINE_EASE_IN_QUARTER};
 use crate::display::{Fb, PANEL_HEIGHT, PANEL_WIDTH};
 
 static MURICA_IDX: AtomicU8 = AtomicU8::new(0);
@@ -21,8 +23,8 @@ fn map_range(a: i32, in_min: i32, in_max: i32, out_min: i32, out_max: i32) -> i3
 }
 
 pub(crate) enum ColorPattern {
-    Circular,
     Clean,
+    FadeIn,
     Fire,
     FireIce,
     MardiGras,
@@ -35,14 +37,13 @@ pub(crate) enum ColorPattern {
 impl ColorPattern {
     pub(crate) fn draw(&mut self, fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
         match self {
-            ColorPattern::Circular => {
-                draw_circular(fb, samples);
-            }
             ColorPattern::Clean => {
                 draw_split_column(fb, samples, WHITE_FADE_IN, WHITE_FADE_IN);
             },
+            ColorPattern::FadeIn => {
+                draw_column(fb, samples, GREEN_FADE_IN_32);
+            },
             ColorPattern::Fire => {
-                //draw_mirror_column(fb, samples, FIRE);
                 draw_split_column(fb, samples, FIRE_TOP, FIRE_BOTTOM);
             },
             ColorPattern::FireIce => {
@@ -67,28 +68,30 @@ impl ColorPattern {
     }
 }
 
-fn calc_amplitudes(samples: [Complex32; PANEL_WIDTH]) -> [u32; PANEL_WIDTH] {
+fn calc_amplitudes(samples: [Complex32; PANEL_WIDTH], out_max: i32) -> [u32; PANEL_WIDTH] {
     let mut amplitudes: [u32; PANEL_WIDTH] = [0; PANEL_WIDTH];
     samples.iter().enumerate().for_each(|(i, v)| {
-        amplitudes[i] = map_range(v.l1_norm() as i32, 0, ADC_RESOLUTION, 0, (PANEL_HEIGHT as i32) / 2) as u32; // TODO so many type casts
+        amplitudes[i] = map_range(v.l1_norm() as i32, 0, ADC_RESOLUTION, 0, out_max) as u32; // TODO so many type casts
     });
     amplitudes
 }
 
-fn draw_circular(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
-    let amplitudes = calc_amplitudes(samples);
+fn draw_column(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH], pattern: [Rgb888; 32]) {
+    let amplitudes = calc_amplitudes(samples, PANEL_HEIGHT as i32);
     fb.erase();
-
     for (col, v) in amplitudes.iter().enumerate() {
         for row in 0..*v {
-            fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT as i32) / 2) - (*v - row) as i32), CIRCULAR[col]);
-            fb.set_pixel(Point::new(col as i32, ((PANEL_HEIGHT as i32) / 2) + (*v - row - 1) as i32), CIRCULAR[col]);
+            fb.set_pixel(Point::new(col as i32, (PANEL_HEIGHT as i32) - (*v - row) as i32), pattern[row as usize]);
         }
+        // this draws in the rest of the column
+        // for r in *v..32 {
+        //      fb.set_pixel(Point::new(col as i32, (PANEL_HEIGHT as i32) - r as i32), YELLOW_FADE_IN_32[r as usize]);
+        // }
     }
 }
 
 fn draw_mirror_column(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH], pattern: [Rgb888; 16]) {
-    let amplitudes = calc_amplitudes(samples);
+    let amplitudes = calc_amplitudes(samples, (PANEL_HEIGHT as i32) / 2);
     fb.erase();
     for (col, v) in amplitudes.iter().enumerate() {
         for row in 0..*v {
@@ -99,7 +102,7 @@ fn draw_mirror_column(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH], pattern: [
 }
 
 fn draw_mardi_gras(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
-    let amplitudes = calc_amplitudes(samples);
+    let amplitudes = calc_amplitudes(samples, (PANEL_HEIGHT as i32) / 2);
     fb.erase();
     let mut idx = MARDI_GRAS_IDX.load(Ordering::Relaxed);
 
@@ -115,7 +118,7 @@ fn draw_mardi_gras(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
 }
 
 fn draw_murica(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
-    let amplitudes = calc_amplitudes(samples);
+    let amplitudes = calc_amplitudes(samples, (PANEL_HEIGHT as i32) / 2);
     fb.erase();
     let mut idx = MURICA_IDX.load(Ordering::Relaxed);
 
@@ -131,7 +134,7 @@ fn draw_murica(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
 }
 
 fn draw_split_column(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH], pattern1: [Rgb888; 16], pattern2: [Rgb888; 16]) {
-    let amplitudes = calc_amplitudes(samples);
+    let amplitudes = calc_amplitudes(samples, (PANEL_HEIGHT as i32) / 2);
     fb.erase();
     for (col, v) in amplitudes.iter().enumerate() {
         for row in 0..*v {
@@ -142,7 +145,7 @@ fn draw_split_column(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH], pattern1: [
 }
 
 fn draw_swamp(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
-    let amplitudes = calc_amplitudes(samples);
+    let amplitudes = calc_amplitudes(samples, (PANEL_HEIGHT as i32) / 2);
     fb.erase();
     let mut idx = SWAMP_IDX.load(Ordering::Relaxed);
 
@@ -158,7 +161,7 @@ fn draw_swamp(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
 }
 
 fn draw_xmas(fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
-    let amplitudes = calc_amplitudes(samples);
+    let amplitudes = calc_amplitudes(samples, (PANEL_HEIGHT as i32) / 2);
     fb.erase();
     let mut idx = XMAS_IDX.load(Ordering::Relaxed);
 
@@ -190,73 +193,6 @@ static BLUE_FADE_IN: [Rgb888; 16] = [
     Rgb888::new(0, 0, SINE_EASE_IN[13]),
     Rgb888::new(0, 0, SINE_EASE_IN[14]),
     Rgb888::new(0, 0, SINE_EASE_IN[15]),
-];
-
-static CIRCULAR: [Rgb888; 64] = [
-    Rgb888::new(0, 0, SINE_EASE_IN_32[0]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[1]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[2]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[3]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[4]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[5]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[6]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[7]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[8]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[9]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[10]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[11]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[12]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[13]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[14]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[15]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[16]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[17]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[18]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[19]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[20]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[21]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[22]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[23]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[24]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[25]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[26]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[27]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[28]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[29]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[30]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[31]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[31]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[30]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[29]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[28]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[27]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[26]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[25]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[24]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[23]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[22]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[21]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[20]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[19]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[18]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[17]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[16]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[15]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[14]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[13]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[12]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[11]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[10]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[9]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[8]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[7]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[6]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[5]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[4]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[3]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[2]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[1]),
-    Rgb888::new(0, 0, SINE_EASE_IN_32[0]),
 ];
 
 static FIRE_TOP: [Rgb888; 16] = [

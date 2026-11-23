@@ -1,237 +1,72 @@
 use embedded_graphics::pixelcolor::Rgb888;
 
-pub(crate) const BRIGHTNESS: u8 = 255;
-pub(crate) const HALF_BRIGHTNESS: u8 = BRIGHTNESS / 2;
-pub(crate) const QUARTER_BRIGHTNESS: u8 = BRIGHTNESS / 4;
+pub(crate) static SINE_EASE_IN_32: [u8; 32] = [8, 8, 9, 10, 13, 15, 19, 23, 28, 33, 39, 45, 52, 59, 67, 75, 84, 94, 103, 113, 124, 135, 146, 157, 169, 181, 193, 205, 217, 230, 242, 255];
+pub(crate) static GREEN_FADE_IN_32: [Rgb888; 32] = [
+    Rgb888::new(0, SINE_EASE_IN_32[0], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[1], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[2], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[3], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[4], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[5], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[6], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[7], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[8], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[9], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[10], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[11], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[12], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[13], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[14], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[15], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[16], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[17], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[18], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[19], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[20], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[21], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[22], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[23], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[24], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[25], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[26], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[27], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[28], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[29], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[30], 0),
+    Rgb888::new(0, SINE_EASE_IN_32[31], 0),
+];
 
-const STEP: u8 = BRIGHTNESS / 16;
-const HALF_STEP: u8 = BRIGHTNESS / 32;
-const QUARTER_STEP: u8 = BRIGHTNESS / 64;
-
-pub(crate) static BLUE_0: Rgb888 = Rgb888::new(0, 0, BRIGHTNESS - (STEP * 15));
-pub(crate) static BLUE_1: Rgb888 = Rgb888::new(0, 0, BRIGHTNESS - (STEP * 14));
-pub(crate) static BLUE_2: Rgb888 = Rgb888::new(0, 0, BRIGHTNESS - (STEP * 13));
-pub(crate) static BLUE_3: Rgb888 = Rgb888::new(0, 0, BRIGHTNESS - (STEP * 12));
-pub(crate) static BLUE_4: Rgb888 = Rgb888::new(0, 0, BRIGHTNESS - (STEP * 11));
-pub(crate) static BLUE_5: Rgb888 = Rgb888::new(0, 0, BRIGHTNESS - (STEP * 10));
-pub(crate) static BLUE_6: Rgb888 = Rgb888::new(0, 0, BRIGHTNESS - (STEP * 9));
-pub(crate) static BLUE_7: Rgb888 = Rgb888::new(0, 0, BRIGHTNESS - (STEP * 8));
-pub(crate) static BLUE_8: Rgb888 = Rgb888::new(0, 0, BRIGHTNESS - (STEP * 7));
-pub(crate) static BLUE_9: Rgb888 = Rgb888::new(0, 0, BRIGHTNESS - (STEP * 6));
-pub(crate) static BLUE_10: Rgb888 = Rgb888::new(0, 0, BRIGHTNESS - (STEP * 5));
-pub(crate) static BLUE_11: Rgb888 = Rgb888::new(0, 0, BRIGHTNESS - (STEP * 4));
-pub(crate) static BLUE_12: Rgb888 = Rgb888::new(0, 0, BRIGHTNESS - (STEP * 3));
-pub(crate) static BLUE_13: Rgb888 = Rgb888::new(0, 0, BRIGHTNESS - (STEP * 2));
-pub(crate) static BLUE_14: Rgb888 = Rgb888::new(0, 0, BRIGHTNESS - (STEP * 1));
-pub(crate) static BLUE_15: Rgb888 = Rgb888::new(0, 0, BRIGHTNESS);
-
-// blue ocean
-pub(crate) static BLUE_OCEAN_0: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 15), BRIGHTNESS - (STEP * 15));
-pub(crate) static BLUE_OCEAN_1: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 14), BRIGHTNESS - (STEP * 14));
-pub(crate) static BLUE_OCEAN_2: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 13), BRIGHTNESS - (STEP * 13));
-pub(crate) static BLUE_OCEAN_3: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 12), BRIGHTNESS - (STEP * 12));
-pub(crate) static BLUE_OCEAN_4: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 11), BRIGHTNESS - (STEP * 11));
-pub(crate) static BLUE_OCEAN_5: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 10), BRIGHTNESS - (STEP * 10));
-pub(crate) static BLUE_OCEAN_6: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 9), BRIGHTNESS - (STEP * 9));
-pub(crate) static BLUE_OCEAN_7: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 8), BRIGHTNESS - (STEP * 8));
-pub(crate) static BLUE_OCEAN_8: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 7), BRIGHTNESS - (STEP * 7));
-pub(crate) static BLUE_OCEAN_9: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 6), BRIGHTNESS - (STEP * 6));
-pub(crate) static BLUE_OCEAN_10: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 5), BRIGHTNESS - (STEP * 5));
-pub(crate) static BLUE_OCEAN_11: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 4), BRIGHTNESS - (STEP * 4));
-pub(crate) static BLUE_OCEAN_12: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 3), BRIGHTNESS - (STEP * 3));
-pub(crate) static BLUE_OCEAN_13: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 2), BRIGHTNESS - (STEP * 2));
-pub(crate) static BLUE_OCEAN_14: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS - (QUARTER_STEP * 1), BRIGHTNESS - (STEP * 1));
-pub(crate) static BLUE_OCEAN_15: Rgb888 = Rgb888::new(0, QUARTER_BRIGHTNESS, BRIGHTNESS);
-
-// blue violet
-pub(crate) static BLUE_VIOLET_0: Rgb888 = Rgb888::new(QUARTER_BRIGHTNESS - (QUARTER_STEP * 15), 0, BRIGHTNESS - (STEP * 15));
-pub(crate) static BLUE_VIOLET_1: Rgb888 = Rgb888::new(QUARTER_BRIGHTNESS - (QUARTER_STEP * 14), 0, BRIGHTNESS - (STEP * 14));
-pub(crate) static BLUE_VIOLET_2: Rgb888 = Rgb888::new(QUARTER_BRIGHTNESS - (QUARTER_STEP * 13), 0, BRIGHTNESS - (STEP * 13));
-pub(crate) static BLUE_VIOLET_3: Rgb888 = Rgb888::new(QUARTER_BRIGHTNESS - (QUARTER_STEP * 12), 0, BRIGHTNESS - (STEP * 12));
-pub(crate) static BLUE_VIOLET_4: Rgb888 = Rgb888::new(QUARTER_BRIGHTNESS - (QUARTER_STEP * 11), 0, BRIGHTNESS - (STEP * 11));
-pub(crate) static BLUE_VIOLET_5: Rgb888 = Rgb888::new(QUARTER_BRIGHTNESS - (QUARTER_STEP * 10), 0, BRIGHTNESS - (STEP * 10));
-pub(crate) static BLUE_VIOLET_6: Rgb888 = Rgb888::new(QUARTER_BRIGHTNESS - (QUARTER_STEP * 9), 0, BRIGHTNESS - (STEP * 9));
-pub(crate) static BLUE_VIOLET_7: Rgb888 = Rgb888::new(QUARTER_BRIGHTNESS - (QUARTER_STEP * 8), 0, BRIGHTNESS - (STEP * 8));
-pub(crate) static BLUE_VIOLET_8: Rgb888 = Rgb888::new(QUARTER_BRIGHTNESS - (QUARTER_STEP * 7), 0, BRIGHTNESS - (STEP * 7));
-pub(crate) static BLUE_VIOLET_9: Rgb888 = Rgb888::new(QUARTER_BRIGHTNESS - (QUARTER_STEP * 6), 0, BRIGHTNESS - (STEP * 6));
-pub(crate) static BLUE_VIOLET_10: Rgb888 = Rgb888::new(QUARTER_BRIGHTNESS - (QUARTER_STEP * 5), 0, BRIGHTNESS - (STEP * 5));
-pub(crate) static BLUE_VIOLET_11: Rgb888 = Rgb888::new(QUARTER_BRIGHTNESS - (QUARTER_STEP * 4), 0, BRIGHTNESS - (STEP * 4));
-pub(crate) static BLUE_VIOLET_12: Rgb888 = Rgb888::new(QUARTER_BRIGHTNESS - (QUARTER_STEP * 3), 0, BRIGHTNESS - (STEP * 3));
-pub(crate) static BLUE_VIOLET_13: Rgb888 = Rgb888::new(QUARTER_BRIGHTNESS - (QUARTER_STEP * 2), 0, BRIGHTNESS - (STEP * 2));
-pub(crate) static BLUE_VIOLET_14: Rgb888 = Rgb888::new(QUARTER_BRIGHTNESS - (QUARTER_STEP * 1), 0, BRIGHTNESS - (STEP * 1));
-pub(crate) static BLUE_VIOLET_15: Rgb888 = Rgb888::new(QUARTER_BRIGHTNESS, 0, BRIGHTNESS);
-
-pub(crate) static CYAN_0: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 15), BRIGHTNESS - (STEP * 15));
-pub(crate) static CYAN_1: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 14), BRIGHTNESS - (STEP * 14));
-pub(crate) static CYAN_2: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 13), BRIGHTNESS - (STEP * 13));
-pub(crate) static CYAN_3: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 12), BRIGHTNESS - (STEP * 12));
-pub(crate) static CYAN_4: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 11), BRIGHTNESS - (STEP * 11));
-pub(crate) static CYAN_5: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 10), BRIGHTNESS - (STEP * 10));
-pub(crate) static CYAN_6: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 9), BRIGHTNESS - (STEP * 9));
-pub(crate) static CYAN_7: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 8), BRIGHTNESS - (STEP * 8));
-pub(crate) static CYAN_8: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 7), BRIGHTNESS - (STEP * 7));
-pub(crate) static CYAN_9: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 6), BRIGHTNESS - (STEP * 6));
-pub(crate) static CYAN_10: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 5), BRIGHTNESS - (STEP * 5));
-pub(crate) static CYAN_11: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 4), BRIGHTNESS - (STEP * 4));
-pub(crate) static CYAN_12: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 3), BRIGHTNESS - (STEP * 3));
-pub(crate) static CYAN_13: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 2), BRIGHTNESS - (STEP * 2));
-pub(crate) static CYAN_14: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 1), BRIGHTNESS - (STEP * 1));
-pub(crate) static CYAN_15: Rgb888 = Rgb888::new(0, BRIGHTNESS, BRIGHTNESS);
-
-pub(crate) static GREEN_0: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 15), 0);
-pub(crate) static GREEN_1: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 14), 0);
-pub(crate) static GREEN_2: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 13), 0);
-pub(crate) static GREEN_3: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 12), 0);
-pub(crate) static GREEN_4: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 11), 0);
-pub(crate) static GREEN_5: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 10), 0);
-pub(crate) static GREEN_6: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 9), 0);
-pub(crate) static GREEN_7: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 8), 0);
-pub(crate) static GREEN_8: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 7), 0);
-pub(crate) static GREEN_9: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 6), 0);
-pub(crate) static GREEN_10: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 5), 0);
-pub(crate) static GREEN_11: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 4), 0);
-pub(crate) static GREEN_12: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 3), 0);
-pub(crate) static GREEN_13: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 2), 0);
-pub(crate) static GREEN_14: Rgb888 = Rgb888::new(0, BRIGHTNESS - (STEP * 1), 0);
-pub(crate) static GREEN_15: Rgb888 = Rgb888::new(0, BRIGHTNESS, 0);
-
-// ocean
-pub(crate) static OCEAN_0: Rgb888 = Rgb888::new(0, HALF_BRIGHTNESS - (HALF_STEP * 15), BRIGHTNESS - (STEP * 15));
-pub(crate) static OCEAN_1: Rgb888 = Rgb888::new(0, HALF_BRIGHTNESS - (HALF_STEP * 14), BRIGHTNESS - (STEP * 14));
-pub(crate) static OCEAN_2: Rgb888 = Rgb888::new(0, HALF_BRIGHTNESS - (HALF_STEP * 13), BRIGHTNESS - (STEP * 13));
-pub(crate) static OCEAN_3: Rgb888 = Rgb888::new(0, HALF_BRIGHTNESS - (HALF_STEP * 12), BRIGHTNESS - (STEP * 12));
-pub(crate) static OCEAN_4: Rgb888 = Rgb888::new(0, HALF_BRIGHTNESS - (HALF_STEP * 11), BRIGHTNESS - (STEP * 11));
-pub(crate) static OCEAN_5: Rgb888 = Rgb888::new(0, HALF_BRIGHTNESS - (HALF_STEP * 10), BRIGHTNESS - (STEP * 10));
-pub(crate) static OCEAN_6: Rgb888 = Rgb888::new(0, HALF_BRIGHTNESS - (HALF_STEP * 9), BRIGHTNESS - (STEP * 9));
-pub(crate) static OCEAN_7: Rgb888 = Rgb888::new(0, HALF_BRIGHTNESS - (HALF_STEP * 8), BRIGHTNESS - (STEP * 8));
-pub(crate) static OCEAN_8: Rgb888 = Rgb888::new(0, HALF_BRIGHTNESS - (HALF_STEP * 7), BRIGHTNESS - (STEP * 7));
-pub(crate) static OCEAN_9: Rgb888 = Rgb888::new(0, HALF_BRIGHTNESS - (HALF_STEP * 6), BRIGHTNESS - (STEP * 6));
-pub(crate) static OCEAN_10: Rgb888 = Rgb888::new(0, HALF_BRIGHTNESS - (HALF_STEP * 5), BRIGHTNESS - (STEP * 5));
-pub(crate) static OCEAN_11: Rgb888 = Rgb888::new(0, HALF_BRIGHTNESS - (HALF_STEP * 4), BRIGHTNESS - (STEP * 4));
-pub(crate) static OCEAN_12: Rgb888 = Rgb888::new(0, HALF_BRIGHTNESS - (HALF_STEP * 3), BRIGHTNESS - (STEP * 3));
-pub(crate) static OCEAN_13: Rgb888 = Rgb888::new(0, HALF_BRIGHTNESS - (HALF_STEP * 2), BRIGHTNESS - (STEP * 2));
-pub(crate) static OCEAN_14: Rgb888 = Rgb888::new(0, HALF_BRIGHTNESS - (HALF_STEP * 1), BRIGHTNESS - (STEP * 1));
-pub(crate) static OCEAN_15: Rgb888 = Rgb888::new(0, HALF_BRIGHTNESS, BRIGHTNESS);
-
-pub(crate) static ORANGE_0: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 15), (BRIGHTNESS / 2) - (STEP / 2 * 15), 0);
-pub(crate) static ORANGE_1: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 14), (BRIGHTNESS / 2) - (STEP / 2 * 14), 0);
-pub(crate) static ORANGE_2: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 13), (BRIGHTNESS / 2) - (STEP / 2 * 13), 0);
-pub(crate) static ORANGE_3: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 12), (BRIGHTNESS / 2) - (STEP / 2 * 12), 0);
-pub(crate) static ORANGE_4: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 11), (BRIGHTNESS / 2) - (STEP / 2 * 11), 0);
-pub(crate) static ORANGE_5: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 10), (BRIGHTNESS / 2) - (STEP / 2 * 10), 0);
-pub(crate) static ORANGE_6: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 9), (BRIGHTNESS / 2) - (STEP / 2 * 9), 0);
-pub(crate) static ORANGE_7: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 8), (BRIGHTNESS / 2) - (STEP / 2 * 8), 0);
-pub(crate) static ORANGE_8: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 7), (BRIGHTNESS / 2) - (STEP / 2 * 7), 0);
-pub(crate) static ORANGE_9: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 6), (BRIGHTNESS / 2) - (STEP / 2 * 6), 0);
-pub(crate) static ORANGE_10: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 5), (BRIGHTNESS / 2) - (STEP / 2 * 5), 0);
-pub(crate) static ORANGE_11: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 4), (BRIGHTNESS / 2) - (STEP / 2 * 4), 0);
-pub(crate) static ORANGE_12: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 3), (BRIGHTNESS / 2) - (STEP / 2 * 3), 0);
-pub(crate) static ORANGE_13: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 2), (BRIGHTNESS / 2) - (STEP / 2 * 2), 0);
-pub(crate) static ORANGE_14: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 1), (BRIGHTNESS / 2) - (STEP / 2 * 1), 0);
-pub(crate) static ORANGE_15: Rgb888 = Rgb888::new(BRIGHTNESS, BRIGHTNESS / 2, 0);
-
-pub(crate) static RED_0: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 15), 0, 0);
-pub(crate) static RED_1: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 14), 0, 0);
-pub(crate) static RED_2: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 13), 0, 0);
-pub(crate) static RED_3: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 12), 0, 0);
-pub(crate) static RED_4: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 11), 0, 0);
-pub(crate) static RED_5: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 10), 0, 0);
-pub(crate) static RED_6: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 9), 0, 0);
-pub(crate) static RED_7: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 8), 0, 0);
-pub(crate) static RED_8: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 7), 0, 0);
-pub(crate) static RED_9: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 6), 0, 0);
-pub(crate) static RED_10: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 5), 0, 0);
-pub(crate) static RED_11: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 4), 0, 0);
-pub(crate) static RED_12: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 3), 0, 0);
-pub(crate) static RED_13: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 2), 0, 0);
-pub(crate) static RED_14: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 1), 0, 0);
-pub(crate) static RED_15: Rgb888 = Rgb888::new(BRIGHTNESS, 0, 0);
-
-// red orange
-pub(crate) static RED_ORANGE_0: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 15), QUARTER_BRIGHTNESS - (QUARTER_STEP * 15), 0);
-pub(crate) static RED_ORANGE_1: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 14), QUARTER_BRIGHTNESS - (QUARTER_STEP * 14), 0);
-pub(crate) static RED_ORANGE_2: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 13), QUARTER_BRIGHTNESS - (QUARTER_STEP * 13), 0);
-pub(crate) static RED_ORANGE_3: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 12), QUARTER_BRIGHTNESS - (QUARTER_STEP * 12), 0);
-pub(crate) static RED_ORANGE_4: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 11), QUARTER_BRIGHTNESS - (QUARTER_STEP * 11), 0);
-pub(crate) static RED_ORANGE_5: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 10), QUARTER_BRIGHTNESS - (QUARTER_STEP * 10), 0);
-pub(crate) static RED_ORANGE_6: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 9), QUARTER_BRIGHTNESS - (QUARTER_STEP * 9), 0);
-pub(crate) static RED_ORANGE_7: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 8), QUARTER_BRIGHTNESS - (QUARTER_STEP * 8), 0);
-pub(crate) static RED_ORANGE_8: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 7), QUARTER_BRIGHTNESS - (QUARTER_STEP * 7), 0);
-pub(crate) static RED_ORANGE_9: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 6), QUARTER_BRIGHTNESS - (QUARTER_STEP * 6), 0);
-pub(crate) static RED_ORANGE_10: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 5), QUARTER_BRIGHTNESS - (QUARTER_STEP * 5), 0);
-pub(crate) static RED_ORANGE_11: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 4), QUARTER_BRIGHTNESS - (QUARTER_STEP * 4), 0);
-pub(crate) static RED_ORANGE_12: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 3), QUARTER_BRIGHTNESS - (QUARTER_STEP * 3), 0);
-pub(crate) static RED_ORANGE_13: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 2), QUARTER_BRIGHTNESS - (QUARTER_STEP * 2), 0);
-pub(crate) static RED_ORANGE_14: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 1), QUARTER_BRIGHTNESS - (QUARTER_STEP * 1), 0);
-pub(crate) static RED_ORANGE_15: Rgb888 = Rgb888::new(BRIGHTNESS, QUARTER_BRIGHTNESS, 0);
-
-// spring green
-pub(crate) static SPRING_GREEN_0: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 15), BRIGHTNESS - (STEP * 15), 0);
-pub(crate) static SPRING_GREEN_1: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 14), BRIGHTNESS - (STEP * 14), 0);
-pub(crate) static SPRING_GREEN_2: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 13), BRIGHTNESS - (STEP * 13), 0);
-pub(crate) static SPRING_GREEN_3: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 12), BRIGHTNESS - (STEP * 12), 0);
-pub(crate) static SPRING_GREEN_4: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 11), BRIGHTNESS - (STEP * 11), 0);
-pub(crate) static SPRING_GREEN_5: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 10), BRIGHTNESS - (STEP * 10), 0);
-pub(crate) static SPRING_GREEN_6: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 9), BRIGHTNESS - (STEP * 9), 0);
-pub(crate) static SPRING_GREEN_7: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 8), BRIGHTNESS - (STEP * 8), 0);
-pub(crate) static SPRING_GREEN_8: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 7), BRIGHTNESS - (STEP * 7), 0);
-pub(crate) static SPRING_GREEN_9: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 6), BRIGHTNESS - (STEP * 6), 0);
-pub(crate) static SPRING_GREEN_10: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 5), BRIGHTNESS - (STEP * 5), 0);
-pub(crate) static SPRING_GREEN_11: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 4), BRIGHTNESS - (STEP * 4), 0);
-pub(crate) static SPRING_GREEN_12: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 3), BRIGHTNESS - (STEP * 3), 0);
-pub(crate) static SPRING_GREEN_13: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 2), BRIGHTNESS - (STEP * 2), 0);
-pub(crate) static SPRING_GREEN_14: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 1), BRIGHTNESS - (STEP * 1), 0);
-pub(crate) static SPRING_GREEN_15: Rgb888 = Rgb888::new(HALF_BRIGHTNESS, BRIGHTNESS, 0);
-
-// violet
-pub(crate) static VIOLET_0: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 15), 0, BRIGHTNESS - (STEP * 15));
-pub(crate) static VIOLET_1: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 14), 0, BRIGHTNESS - (STEP * 14));
-pub(crate) static VIOLET_2: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 13), 0, BRIGHTNESS - (STEP * 13));
-pub(crate) static VIOLET_3: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 12), 0, BRIGHTNESS - (STEP * 12));
-pub(crate) static VIOLET_4: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 11), 0, BRIGHTNESS - (STEP * 11));
-pub(crate) static VIOLET_5: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 10), 0, BRIGHTNESS - (STEP * 10));
-pub(crate) static VIOLET_6: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 9), 0, BRIGHTNESS - (STEP * 9));
-pub(crate) static VIOLET_7: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 8), 0, BRIGHTNESS - (STEP * 8));
-pub(crate) static VIOLET_8: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 7), 0, BRIGHTNESS - (STEP * 7));
-pub(crate) static VIOLET_9: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 6), 0, BRIGHTNESS - (STEP * 6));
-pub(crate) static VIOLET_10: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 5), 0, BRIGHTNESS - (STEP * 5));
-pub(crate) static VIOLET_11: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 4), 0, BRIGHTNESS - (STEP * 4));
-pub(crate) static VIOLET_12: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 3), 0, BRIGHTNESS - (STEP * 3));
-pub(crate) static VIOLET_13: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 2), 0, BRIGHTNESS - (STEP * 2));
-pub(crate) static VIOLET_14: Rgb888 = Rgb888::new(HALF_BRIGHTNESS - (HALF_STEP * 1), 0, BRIGHTNESS - (STEP * 1));
-pub(crate) static VIOLET_15: Rgb888 = Rgb888::new(HALF_BRIGHTNESS, 0, BRIGHTNESS);
-
-// white
-pub(crate) static WHITE_0: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 15), BRIGHTNESS - (STEP * 15), BRIGHTNESS - (STEP * 15));
-pub(crate) static WHITE_1: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 14), BRIGHTNESS - (STEP * 14), BRIGHTNESS - (STEP * 14));
-pub(crate) static WHITE_2: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 13), BRIGHTNESS - (STEP * 13), BRIGHTNESS - (STEP * 13));
-pub(crate) static WHITE_3: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 12), BRIGHTNESS - (STEP * 12), BRIGHTNESS - (STEP * 12));
-pub(crate) static WHITE_4: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 11), BRIGHTNESS - (STEP * 11), BRIGHTNESS - (STEP * 11));
-pub(crate) static WHITE_5: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 10), BRIGHTNESS - (STEP * 10), BRIGHTNESS - (STEP * 10));
-pub(crate) static WHITE_6: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 9), BRIGHTNESS - (STEP * 9), BRIGHTNESS - (STEP * 9));
-pub(crate) static WHITE_7: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 8), BRIGHTNESS - (STEP * 8), BRIGHTNESS - (STEP * 8));
-pub(crate) static WHITE_8: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 7), BRIGHTNESS - (STEP * 7), BRIGHTNESS - (STEP * 7));
-pub(crate) static WHITE_9: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 6), BRIGHTNESS - (STEP * 6), BRIGHTNESS - (STEP * 6));
-pub(crate) static WHITE_10: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 5), BRIGHTNESS - (STEP * 5), BRIGHTNESS - (STEP * 5));
-pub(crate) static WHITE_11: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 4), BRIGHTNESS - (STEP * 4), BRIGHTNESS - (STEP * 4));
-pub(crate) static WHITE_12: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 3), BRIGHTNESS - (STEP * 3), BRIGHTNESS - (STEP * 3));
-pub(crate) static WHITE_13: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 2), BRIGHTNESS - (STEP * 2), BRIGHTNESS - (STEP * 2));
-pub(crate) static WHITE_14: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 1), BRIGHTNESS - (STEP * 1), BRIGHTNESS - (STEP * 1));
-pub(crate) static WHITE_15: Rgb888 = Rgb888::new(BRIGHTNESS, BRIGHTNESS, BRIGHTNESS);
-
-pub(crate) static YELLOW_0: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 15), BRIGHTNESS - (STEP * 15), 0);
-pub(crate) static YELLOW_1: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 14), BRIGHTNESS - (STEP * 14), 0);
-pub(crate) static YELLOW_2: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 13), BRIGHTNESS - (STEP * 13), 0);
-pub(crate) static YELLOW_3: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 12), BRIGHTNESS - (STEP * 12), 0);
-pub(crate) static YELLOW_4: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 11), BRIGHTNESS - (STEP * 11), 0);
-pub(crate) static YELLOW_5: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 10), BRIGHTNESS - (STEP * 10), 0);
-pub(crate) static YELLOW_6: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 9), BRIGHTNESS - (STEP * 9), 0);
-pub(crate) static YELLOW_7: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 8), BRIGHTNESS - (STEP * 8), 0);
-pub(crate) static YELLOW_8: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 7), BRIGHTNESS - (STEP * 7), 0);
-pub(crate) static YELLOW_9: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 6), BRIGHTNESS - (STEP * 6), 0);
-pub(crate) static YELLOW_10: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 5), BRIGHTNESS - (STEP * 5), 0);
-pub(crate) static YELLOW_11: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 4), BRIGHTNESS - (STEP * 4), 0);
-pub(crate) static YELLOW_12: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 3), BRIGHTNESS - (STEP * 3), 0);
-pub(crate) static YELLOW_13: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 2), BRIGHTNESS - (STEP * 2), 0);
-pub(crate) static YELLOW_14: Rgb888 = Rgb888::new(BRIGHTNESS - (STEP * 1), BRIGHTNESS - (STEP * 1), 0);
-pub(crate) static YELLOW_15: Rgb888 = Rgb888::new(BRIGHTNESS, BRIGHTNESS, 0);
+pub(crate) static YELLOW_FADE_IN_32: [Rgb888; 32] = [
+    Rgb888::new(SINE_EASE_IN_32[0], SINE_EASE_IN_32[0], 0),
+    Rgb888::new(SINE_EASE_IN_32[1], SINE_EASE_IN_32[1], 0),
+    Rgb888::new(SINE_EASE_IN_32[2], SINE_EASE_IN_32[2], 0),
+    Rgb888::new(SINE_EASE_IN_32[3], SINE_EASE_IN_32[3], 0),
+    Rgb888::new(SINE_EASE_IN_32[4], SINE_EASE_IN_32[4], 0),
+    Rgb888::new(SINE_EASE_IN_32[5], SINE_EASE_IN_32[5], 0),
+    Rgb888::new(SINE_EASE_IN_32[6], SINE_EASE_IN_32[6], 0),
+    Rgb888::new(SINE_EASE_IN_32[7], SINE_EASE_IN_32[7], 0),
+    Rgb888::new(SINE_EASE_IN_32[8], SINE_EASE_IN_32[8], 0),
+    Rgb888::new(SINE_EASE_IN_32[9], SINE_EASE_IN_32[9], 0),
+    Rgb888::new(SINE_EASE_IN_32[10], SINE_EASE_IN_32[10], 0),
+    Rgb888::new(SINE_EASE_IN_32[11], SINE_EASE_IN_32[11], 0),
+    Rgb888::new(SINE_EASE_IN_32[12], SINE_EASE_IN_32[12], 0),
+    Rgb888::new(SINE_EASE_IN_32[13], SINE_EASE_IN_32[13], 0),
+    Rgb888::new(SINE_EASE_IN_32[14], SINE_EASE_IN_32[14], 0),
+    Rgb888::new(SINE_EASE_IN_32[15], SINE_EASE_IN_32[15], 0),
+    Rgb888::new(SINE_EASE_IN_32[16], SINE_EASE_IN_32[16], 0),
+    Rgb888::new(SINE_EASE_IN_32[17], SINE_EASE_IN_32[17], 0),
+    Rgb888::new(SINE_EASE_IN_32[18], SINE_EASE_IN_32[18], 0),
+    Rgb888::new(SINE_EASE_IN_32[19], SINE_EASE_IN_32[19], 0),
+    Rgb888::new(SINE_EASE_IN_32[20], SINE_EASE_IN_32[20], 0),
+    Rgb888::new(SINE_EASE_IN_32[21], SINE_EASE_IN_32[21], 0),
+    Rgb888::new(SINE_EASE_IN_32[22], SINE_EASE_IN_32[22], 0),
+    Rgb888::new(SINE_EASE_IN_32[23], SINE_EASE_IN_32[23], 0),
+    Rgb888::new(SINE_EASE_IN_32[24], SINE_EASE_IN_32[24], 0),
+    Rgb888::new(SINE_EASE_IN_32[25], SINE_EASE_IN_32[25], 0),
+    Rgb888::new(SINE_EASE_IN_32[26], SINE_EASE_IN_32[26], 0),
+    Rgb888::new(SINE_EASE_IN_32[27], SINE_EASE_IN_32[27], 0),
+    Rgb888::new(SINE_EASE_IN_32[28], SINE_EASE_IN_32[28], 0),
+    Rgb888::new(SINE_EASE_IN_32[29], SINE_EASE_IN_32[29], 0),
+    Rgb888::new(SINE_EASE_IN_32[30], SINE_EASE_IN_32[30], 0),
+    Rgb888::new(SINE_EASE_IN_32[31], SINE_EASE_IN_32[31], 0),
+];
