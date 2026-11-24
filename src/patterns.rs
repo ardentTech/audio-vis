@@ -4,7 +4,7 @@ use embedded_graphics::geometry::Point;
 use embedded_graphics::pixelcolor::Rgb888;
 use microfft::Complex32;
 use crate::ADC_RESOLUTION;
-use crate::colors::{GREEN_FADE_IN_32, YELLOW_FADE_IN_32};
+use crate::colors::{GREEN_FADE_IN_32, SPRING_GREEN_FADE_IN_32, WHITE_FADE_IN_32, YELLOW_FADE_IN_32};
 use crate::curves::{SINE_EASE_IN, SINE_EASE_IN_HALF, SINE_EASE_IN_QUARTER};
 use crate::display::{Fb, PANEL_HEIGHT, PANEL_WIDTH};
 
@@ -13,6 +13,7 @@ static MARDI_GRAS_IDX: AtomicU8 = AtomicU8::new(0);
 static SWAMP_IDX: AtomicU8 = AtomicU8::new(0);
 static XMAS_IDX: AtomicU8 = AtomicU8::new(0);
 
+// TODO remove
 fn map_range(a: i32, in_min: i32, in_max: i32, out_min: i32, out_max: i32) -> i32 {
     if a < in_min {
         return out_min;
@@ -41,7 +42,7 @@ impl ColorPattern {
                 draw_split_column(fb, samples, WHITE_FADE_IN, WHITE_FADE_IN);
             },
             ColorPattern::FadeIn => {
-                draw_column(fb, samples, GREEN_FADE_IN_32);
+                draw_column(fb, samples, WHITE_FADE_IN_32);
             },
             ColorPattern::Fire => {
                 draw_split_column(fb, samples, FIRE_TOP, FIRE_BOTTOM);
@@ -69,7 +70,7 @@ impl ColorPattern {
 }
 
 fn calc_amplitudes(samples: [Complex32; PANEL_WIDTH], out_max: i32) -> [u32; PANEL_WIDTH] {
-    let mut amplitudes: [u32; PANEL_WIDTH] = [0; PANEL_WIDTH];
+    let mut amplitudes = [0u32; PANEL_WIDTH];
     samples.iter().enumerate().for_each(|(i, v)| {
         amplitudes[i] = map_range(v.l1_norm() as i32, 0, ADC_RESOLUTION, 0, out_max) as u32; // TODO so many type casts
     });

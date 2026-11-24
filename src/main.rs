@@ -5,7 +5,9 @@ mod display;
 mod colors;
 mod patterns;
 mod curves;
+mod vis;
 
+use core::cell::RefCell;
 use defmt::{debug, unwrap};
 #[allow(unused_imports)]
 use {defmt_rtt as _, panic_probe as _};
@@ -16,14 +18,15 @@ use embassy_rp::gpio::Pull;
 use embassy_rp::interrupt::typelevel::Handler;
 use embassy_rp::peripherals::{DMA_CH0, DMA_CH1, PIO0};
 use embassy_rp::pio::Pio;
+use embassy_sync::blocking_mutex::Mutex;
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_sync::channel;
 use embassy_sync::signal::Signal;
-use embedded_graphics::pixelcolor::Rgb888;
 use microfft::Complex32;
 use rp_hub75::{on_dma_irq, Hub75Pins16, Hub75, Hub75Config, hub75_descriptors};
 use crate::display::{Fb, PANEL_CLOCK_HZ, PANEL_WIDTH};
 use crate::patterns::ColorPattern;
+use crate::vis::{FullHeightVis, Vis};
 
 /// The driver's frame-boundary work, in the DMA interrupt.
 struct DmaIrqHandler;
@@ -63,7 +66,10 @@ enum Event {
 static EVENT_CHANNEL: channel::Channel<CriticalSectionRawMutex, Event, 10> = channel::Channel::new();
 static PROCESS_SAMPLES_HANDLER: Signal<CriticalSectionRawMutex, ProcessSamples> = Signal::new();
 static DRAW_AMPLITUDES_HANDLER: Signal<CriticalSectionRawMutex, DrawSamples> = Signal::new();
+
 // TODO active color pattern
+
+static VIS: Mutex<CriticalSectionRawMutex, RefCell<Option<Vis>>> = Mutex::new(RefCell::new(None));
 
 bind_interrupts!(struct Irqs {
     ADC_IRQ_FIFO => InterruptHandler;
@@ -142,7 +148,7 @@ async fn display_task(
 
     loop {
         let samples = DRAW_AMPLITUDES_HANDLER.wait().await;
-        ColorPattern::FadeIn.draw(fb, samples.0);
+        VIS.lock(|v| v.borrow_mut().as_mut().unwrap().draw(fb, samples.0) );
 
         match hub75.swap(fb) {
             Ok(mut swap) => {
@@ -174,6 +180,8 @@ async fn orchestration_task() {
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
+
+    VIS.lock(|v| v.borrow_mut().replace(Vis::FullHeight(FullHeightVis::default())));
 
     spawner.spawn(unwrap!(orchestration_task()));
 
