@@ -22,10 +22,10 @@ use embassy_sync::blocking_mutex::Mutex;
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_sync::channel;
 use embassy_sync::signal::Signal;
+use embassy_time::{Duration, Ticker};
 use microfft::Complex32;
 use rp_hub75::{on_dma_irq, Hub75Pins16, Hub75, Hub75Config, hub75_descriptors};
 use crate::display::{Fb, PANEL_CLOCK_HZ, PANEL_WIDTH};
-use crate::patterns::ColorPattern;
 use crate::vis::{FullHeightVis, Vis};
 
 /// The driver's frame-boundary work, in the DMA interrupt.
@@ -177,6 +177,15 @@ async fn orchestration_task() {
     }
 }
 
+#[embassy_executor::task]
+async fn vis_color_change_task() {
+    let mut ticker = Ticker::every(Duration::from_secs(3));
+    loop {
+        ticker.next().await;
+        VIS.lock(|v| v.borrow_mut().as_mut().unwrap().change_color() );
+    }
+}
+
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
@@ -201,4 +210,6 @@ async fn main(spawner: Spawner) {
     let adc = Adc::new(p.ADC, Irqs, Config::default());
     let pin = Channel::new_pin(p.PIN_26, Pull::Up);
     spawner.spawn(unwrap!(samples_read_task(adc, pin)));
+
+    spawner.spawn(unwrap!(vis_color_change_task()));
 }
