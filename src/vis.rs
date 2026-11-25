@@ -2,7 +2,7 @@ use embedded_graphics::geometry::Point;
 use embedded_graphics::pixelcolor::Rgb888;
 use microfft::Complex32;
 use crate::ADC_RESOLUTION;
-use crate::colors::{SPRING_GREEN_FADE_IN_32, WHITE_FADE_IN_32, YELLOW_FADE_IN_32};
+use crate::colors::{BLUE_FADE_IN_32, CYAN_FADE_IN_32, GREEN_FADE_IN_32, MAGENTA_FADE_IN_32, RED_FADE_IN_32, SPRING_GREEN_FADE_IN_32, WHITE_FADE_IN_32, YELLOW_FADE_IN_32};
 use crate::display::{Fb, PANEL_HEIGHT, PANEL_WIDTH};
 
 fn calc_amplitudes(samples: [Complex32; PANEL_WIDTH], out_max: i32) -> [u32; PANEL_WIDTH] {
@@ -23,26 +23,31 @@ fn map_range(a: i32, in_min: i32, in_max: i32, out_min: i32, out_max: i32) -> i3
 }
 
 trait MatrixVis<const T: usize> {
-    fn change_color(&mut self);
     fn draw(&self, fb: &mut Fb, samples: [Complex32; T]);
+    fn next_color(&mut self);
+    fn prev_color(&mut self);
 }
 
 #[derive(Debug)]
 pub(crate) struct FullHeightVis {
-    colors: [[Rgb888; PANEL_HEIGHT]; 3],
+    colors: [[Rgb888; PANEL_HEIGHT]; 6],
     index: usize
 }
 
 impl Default for FullHeightVis {
     fn default() -> Self {
-        Self { colors: [SPRING_GREEN_FADE_IN_32, YELLOW_FADE_IN_32, WHITE_FADE_IN_32], index: 0 }
+        Self { colors: [
+            RED_FADE_IN_32,
+            YELLOW_FADE_IN_32,
+            GREEN_FADE_IN_32,
+            CYAN_FADE_IN_32,
+            BLUE_FADE_IN_32,
+            MAGENTA_FADE_IN_32,
+        ], index: 0 }
     }
 }
 
 impl MatrixVis<PANEL_WIDTH> for FullHeightVis {
-    fn change_color(&mut self) {
-        self.index = if self.index == 2 { 0 } else { self.index + 1 };
-    }
 
     fn draw(&self, fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
         // TODO can abstract away the next two lines
@@ -53,6 +58,14 @@ impl MatrixVis<PANEL_WIDTH> for FullHeightVis {
                 fb.set_pixel(Point::new(col as i32, (PANEL_HEIGHT as i32) - (*v - row) as i32), self.colors[self.index][row as usize]);
             }
         }
+    }
+
+    fn next_color(&mut self) {
+        self.index = if self.index == 5 { 0 } else { self.index + 1 };
+    }
+
+    fn prev_color(&mut self) {
+        self.index = if self.index == 0 { 5 } else { self.index - 1 };
     }
 }
 
@@ -67,9 +80,15 @@ impl Vis {
         }
     }
 
-    pub(crate) fn change_color(&mut self) {
+    pub(crate) fn next_color(&mut self) {
         match self {
-            Vis::FullHeight(vis) => vis.change_color(),
+            Vis::FullHeight(vis) => vis.next_color(),
+        }
+    }
+
+    pub(crate) fn prev_color(&mut self) {
+        match self {
+            Vis::FullHeight(vis) => vis.prev_color(),
         }
     }
 }

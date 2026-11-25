@@ -16,13 +16,13 @@ use embassy_rp::adc::{Adc, Async, Channel, Config, InterruptHandler};
 use embassy_rp::{bind_interrupts, clocks, pac, pio, Peri};
 use embassy_rp::gpio::Pull;
 use embassy_rp::interrupt::typelevel::Handler;
-use embassy_rp::peripherals::{DMA_CH0, DMA_CH1, PIO0};
+use embassy_rp::peripherals::{DMA_CH0, DMA_CH1, PIO0, PIO1};
 use embassy_rp::pio::Pio;
+use embassy_rp::pio_programs::rotary_encoder::{Direction, PioEncoder, PioEncoderProgram};
 use embassy_sync::blocking_mutex::Mutex;
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_sync::channel;
 use embassy_sync::signal::Signal;
-use embassy_time::{Duration, Ticker};
 use microfft::Complex32;
 use rp_hub75::{on_dma_irq, Hub75Pins16, Hub75, Hub75Config, hub75_descriptors};
 use crate::display::{Fb, PANEL_CLOCK_HZ, PANEL_WIDTH};
@@ -75,6 +75,7 @@ bind_interrupts!(struct Irqs {
     ADC_IRQ_FIFO => InterruptHandler;
     DMA_IRQ_0 => DmaIrqHandler;
     PIO0_IRQ_0 => pio::InterruptHandler<PIO0>;
+    PIO1_IRQ_0 => pio::InterruptHandler<PIO1>;
 });
 
 #[embassy_executor::task]
@@ -178,11 +179,13 @@ async fn orchestration_task() {
 }
 
 #[embassy_executor::task]
-async fn vis_color_change_task() {
-    let mut ticker = Ticker::every(Duration::from_secs(3));
+async fn encoder_task(mut encoder: PioEncoder<'static, PIO1, 0>) {
+    // TODO software debounce
     loop {
-        ticker.next().await;
-        VIS.lock(|v| v.borrow_mut().as_mut().unwrap().change_color() );
+        match encoder.read().await {
+            Direction::Clockwise => VIS.lock(|v| v.borrow_mut().as_mut().unwrap().next_color() ),
+            Direction::CounterClockwise => VIS.lock(|v| v.borrow_mut().as_mut().unwrap().prev_color() ),
+        }
     }
 }
 
@@ -211,5 +214,10 @@ async fn main(spawner: Spawner) {
     let pin = Channel::new_pin(p.PIN_26, Pull::Up);
     spawner.spawn(unwrap!(samples_read_task(adc, pin)));
 
-    spawner.spawn(unwrap!(vis_color_change_task()));
+    let Pio {
+        mut common, sm0, sm1, ..
+    } = Pio::new(p.PIO1, Irqs);
+    let prg = PioEncoderProgram::new(&mut common);
+    let encoder = PioEncoder::new(&mut common, sm0, p.PIN_16, p.PIN_17, &prg);
+    spawner.spawn(encoder_task(encoder).unwrap());
 }

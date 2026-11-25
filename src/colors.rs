@@ -38,6 +38,41 @@ pub(crate) static BLUE_FADE_IN_32: [Rgb888; 32] = [
     Rgb888::new(0, 0, SINE_EASE_IN_32[31]),
 ];
 
+pub(crate) static CYAN_FADE_IN_32: [Rgb888; 32] = [
+    Rgb888::new(0, SINE_EASE_IN_32[0], SINE_EASE_IN_32[0]),
+    Rgb888::new(0, SINE_EASE_IN_32[1], SINE_EASE_IN_32[1]),
+    Rgb888::new(0, SINE_EASE_IN_32[2], SINE_EASE_IN_32[2]),
+    Rgb888::new(0, SINE_EASE_IN_32[3], SINE_EASE_IN_32[3]),
+    Rgb888::new(0, SINE_EASE_IN_32[4], SINE_EASE_IN_32[4]),
+    Rgb888::new(0, SINE_EASE_IN_32[5], SINE_EASE_IN_32[5]),
+    Rgb888::new(0, SINE_EASE_IN_32[6], SINE_EASE_IN_32[6]),
+    Rgb888::new(0, SINE_EASE_IN_32[7], SINE_EASE_IN_32[7]),
+    Rgb888::new(0, SINE_EASE_IN_32[8], SINE_EASE_IN_32[8]),
+    Rgb888::new(0, SINE_EASE_IN_32[9], SINE_EASE_IN_32[9]),
+    Rgb888::new(0, SINE_EASE_IN_32[10], SINE_EASE_IN_32[10]),
+    Rgb888::new(0, SINE_EASE_IN_32[11], SINE_EASE_IN_32[11]),
+    Rgb888::new(0, SINE_EASE_IN_32[12], SINE_EASE_IN_32[12]),
+    Rgb888::new(0, SINE_EASE_IN_32[13], SINE_EASE_IN_32[13]),
+    Rgb888::new(0, SINE_EASE_IN_32[14], SINE_EASE_IN_32[14]),
+    Rgb888::new(0, SINE_EASE_IN_32[15], SINE_EASE_IN_32[15]),
+    Rgb888::new(0, SINE_EASE_IN_32[16], SINE_EASE_IN_32[16]),
+    Rgb888::new(0, SINE_EASE_IN_32[17], SINE_EASE_IN_32[17]),
+    Rgb888::new(0, SINE_EASE_IN_32[18], SINE_EASE_IN_32[18]),
+    Rgb888::new(0, SINE_EASE_IN_32[19], SINE_EASE_IN_32[19]),
+    Rgb888::new(0, SINE_EASE_IN_32[20], SINE_EASE_IN_32[20]),
+    Rgb888::new(0, SINE_EASE_IN_32[21], SINE_EASE_IN_32[21]),
+    Rgb888::new(0, SINE_EASE_IN_32[22], SINE_EASE_IN_32[22]),
+    Rgb888::new(0, SINE_EASE_IN_32[23], SINE_EASE_IN_32[23]),
+    Rgb888::new(0, SINE_EASE_IN_32[24], SINE_EASE_IN_32[24]),
+    Rgb888::new(0, SINE_EASE_IN_32[25], SINE_EASE_IN_32[25]),
+    Rgb888::new(0, SINE_EASE_IN_32[26], SINE_EASE_IN_32[26]),
+    Rgb888::new(0, SINE_EASE_IN_32[27], SINE_EASE_IN_32[27]),
+    Rgb888::new(0, SINE_EASE_IN_32[28], SINE_EASE_IN_32[28]),
+    Rgb888::new(0, SINE_EASE_IN_32[29], SINE_EASE_IN_32[29]),
+    Rgb888::new(0, SINE_EASE_IN_32[30], SINE_EASE_IN_32[30]),
+    Rgb888::new(0, SINE_EASE_IN_32[31], SINE_EASE_IN_32[31]),
+];
+
 pub(crate) static GREEN_FADE_IN_32: [Rgb888; 32] = [
     Rgb888::new(0, SINE_EASE_IN_32[0], 0),
     Rgb888::new(0, SINE_EASE_IN_32[1], 0),
@@ -72,6 +107,45 @@ pub(crate) static GREEN_FADE_IN_32: [Rgb888; 32] = [
     Rgb888::new(0, SINE_EASE_IN_32[30], 0),
     Rgb888::new(0, SINE_EASE_IN_32[31], 0),
 ];
+
+pub(crate) static MAGENTA_FADE_IN_32: [Rgb888; 32] = [
+    Rgb888::new(SINE_EASE_IN_32[0], 0, SINE_EASE_IN_32[0]),
+    Rgb888::new(SINE_EASE_IN_32[1], 0, SINE_EASE_IN_32[1]),
+    Rgb888::new(SINE_EASE_IN_32[2], 0, SINE_EASE_IN_32[2]),
+    Rgb888::new(SINE_EASE_IN_32[3], 0, SINE_EASE_IN_32[3]),
+    Rgb888::new(SINE_EASE_IN_32[4], 0, SINE_EASE_IN_32[4]),
+    Rgb888::new(SINE_EASE_IN_32[5], 0, SINE_EASE_IN_32[5]),
+    Rgb888::new(SINE_EASE_IN_32[6], 0, SINE_EASE_IN_32[6]),
+    Rgb888::new(SINE_EASE_IN_32[7], 0, SINE_EASE_IN_32[7]),
+    Rgb888::new(SINE_EASE_IN_32[8], 0, SINE_EASE_IN_32[8]),
+    Rgb888::new(SINE_EASE_IN_32[9], 0, SINE_EASE_IN_32[9]),
+    Rgb888::new(SINE_EASE_IN_32[10], 0, SINE_EASE_IN_32[10]),
+    Rgb888::new(SINE_EASE_IN_32[11], 0, SINE_EASE_IN_32[11]),
+    Rgb888::new(SINE_EASE_IN_32[12], 0, SINE_EASE_IN_32[12]),
+    Rgb888::new(SINE_EASE_IN_32[13], 0, SINE_EASE_IN_32[13]),
+    Rgb888::new(SINE_EASE_IN_32[14], 0, SINE_EASE_IN_32[14]),
+    Rgb888::new(SINE_EASE_IN_32[15], 0, SINE_EASE_IN_32[15]),
+    Rgb888::new(SINE_EASE_IN_32[16], 0, SINE_EASE_IN_32[16]),
+    Rgb888::new(SINE_EASE_IN_32[17], 0, SINE_EASE_IN_32[17]),
+    Rgb888::new(SINE_EASE_IN_32[18], 0, SINE_EASE_IN_32[18]),
+    Rgb888::new(SINE_EASE_IN_32[19], 0, SINE_EASE_IN_32[19]),
+    Rgb888::new(SINE_EASE_IN_32[20], 0, SINE_EASE_IN_32[20]),
+    Rgb888::new(SINE_EASE_IN_32[21], 0, SINE_EASE_IN_32[21]),
+    Rgb888::new(SINE_EASE_IN_32[22], 0, SINE_EASE_IN_32[22]),
+    Rgb888::new(SINE_EASE_IN_32[23], 0, SINE_EASE_IN_32[23]),
+    Rgb888::new(SINE_EASE_IN_32[24], 0, SINE_EASE_IN_32[24]),
+    Rgb888::new(SINE_EASE_IN_32[25], 0, SINE_EASE_IN_32[25]),
+    Rgb888::new(SINE_EASE_IN_32[26], 0, SINE_EASE_IN_32[26]),
+    Rgb888::new(SINE_EASE_IN_32[27], 0, SINE_EASE_IN_32[27]),
+    Rgb888::new(SINE_EASE_IN_32[28], 0, SINE_EASE_IN_32[28]),
+    Rgb888::new(SINE_EASE_IN_32[29], 0, SINE_EASE_IN_32[29]),
+    Rgb888::new(SINE_EASE_IN_32[30], 0, SINE_EASE_IN_32[30]),
+    Rgb888::new(SINE_EASE_IN_32[31], 0, SINE_EASE_IN_32[31]),
+];
+
+// TODO ocean
+// TODO orange
+// TODO raspberry
 
 pub(crate) static RED_FADE_IN_32: [Rgb888; 32] = [
     Rgb888::new(SINE_EASE_IN_32[0], 0, 0),
@@ -142,6 +216,9 @@ pub(crate) static SPRING_GREEN_FADE_IN_32: [Rgb888; 32] = [
     Rgb888::new(SINE_EASE_IN_32_HALF[30], SINE_EASE_IN_32[30], 0),
     Rgb888::new(SINE_EASE_IN_32_HALF[31], SINE_EASE_IN_32[31], 0),
 ];
+
+// TODO turquoise
+// TODO violet
 
 pub(crate) static YELLOW_FADE_IN_32: [Rgb888; 32] = [
     Rgb888::new(SINE_EASE_IN_32[0], SINE_EASE_IN_32[0], 0),
