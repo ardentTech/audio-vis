@@ -1,5 +1,52 @@
 use embedded_graphics::pixelcolor::Rgb888;
 
+#[derive(Debug, Default)]
+pub(crate) enum Color {
+    #[default]
+    Red,
+    Yellow,
+    Green,
+    Cyan,
+    Blue,
+    Magenta,
+}
+
+impl Color {
+
+    // TODO need a way to fetch 32 and 64 colors...
+    pub(crate) fn data(&self) -> [Rgb888; 32] {
+        match self {
+            Color::Red => RED_FADE_IN_32,
+            Color::Yellow => YELLOW_FADE_IN_32,
+            Color::Green => GREEN_FADE_IN_32,
+            Color::Cyan => CYAN_FADE_IN_32,
+            Color::Blue => BLUE_FADE_IN_32,
+            Color::Magenta => MAGENTA_FADE_IN_32,
+        }
+    }
+    pub(crate) fn next(&self) -> Color {
+        match self {
+            Color::Red => Color::Yellow,
+            Color::Yellow => Color::Green,
+            Color::Green => Color::Cyan,
+            Color::Cyan => Color::Blue,
+            Color::Blue => Color::Magenta,
+            Color::Magenta => Color::Red,
+        }
+    }
+
+    pub(crate) fn prev(&self) -> Color {
+        match self {
+            Color::Red => Color::Magenta,
+            Color::Yellow => Color::Red,
+            Color::Green => Color::Yellow,
+            Color::Cyan => Color::Green,
+            Color::Blue => Color::Cyan,
+            Color::Magenta => Color::Blue,
+        }
+    }
+}
+
 pub(crate) static SINE_EASE_IN_32: [u8; 32] = [8, 8, 9, 10, 13, 15, 19, 23, 28, 33, 39, 45, 52, 59, 67, 75, 84, 94, 103, 113, 124, 135, 146, 157, 169, 181, 193, 205, 217, 230, 242, 255];
 pub(crate) static SINE_EASE_IN_32_HALF: [u8; 32] = [4, 4, 4, 5, 6, 7, 9, 11, 13, 16, 19, 22, 26, 29, 33, 37, 42, 46, 51, 56, 61, 67, 72, 78, 84, 90, 96, 102, 108, 114, 120, 127];
 

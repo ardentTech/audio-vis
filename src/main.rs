@@ -2,7 +2,7 @@
 #![no_main]
 
 mod display;
-mod colors;
+mod color;
 mod patterns;
 mod curves;
 mod vis;

@@ -1,8 +1,7 @@
 use embedded_graphics::geometry::Point;
-use embedded_graphics::pixelcolor::Rgb888;
 use microfft::Complex32;
 use crate::ADC_RESOLUTION;
-use crate::colors::{BLUE_FADE_IN_32, CYAN_FADE_IN_32, GREEN_FADE_IN_32, MAGENTA_FADE_IN_32, RED_FADE_IN_32, SPRING_GREEN_FADE_IN_32, WHITE_FADE_IN_32, YELLOW_FADE_IN_32};
+use crate::color::Color;
 use crate::display::{Fb, PANEL_HEIGHT, PANEL_WIDTH};
 
 fn calc_amplitudes(samples: [Complex32; PANEL_WIDTH], out_max: i32) -> [u32; PANEL_WIDTH] {
@@ -30,42 +29,34 @@ trait MatrixVis<const T: usize> {
 
 #[derive(Debug)]
 pub(crate) struct FullHeightVis {
-    colors: [[Rgb888; PANEL_HEIGHT]; 6],
-    index: usize
+    color: Color
 }
 
 impl Default for FullHeightVis {
     fn default() -> Self {
-        Self { colors: [
-            RED_FADE_IN_32,
-            YELLOW_FADE_IN_32,
-            GREEN_FADE_IN_32,
-            CYAN_FADE_IN_32,
-            BLUE_FADE_IN_32,
-            MAGENTA_FADE_IN_32,
-        ], index: 0 }
+        Self { color: Color::default() }
     }
 }
 
 impl MatrixVis<PANEL_WIDTH> for FullHeightVis {
 
     fn draw(&self, fb: &mut Fb, samples: [Complex32; PANEL_WIDTH]) {
-        // TODO can abstract away the next two lines
+        // TODO can abstract away the next two lines?
         let amplitudes = calc_amplitudes(samples, PANEL_HEIGHT as i32);
         fb.erase();
         for (col, v) in amplitudes.iter().enumerate() {
             for row in 0..*v {
-                fb.set_pixel(Point::new(col as i32, (PANEL_HEIGHT as i32) - (*v - row) as i32), self.colors[self.index][row as usize]);
+                fb.set_pixel(Point::new(col as i32, (PANEL_HEIGHT as i32) - (*v - row) as i32), self.color.data()[row as usize]);
             }
         }
     }
 
     fn next_color(&mut self) {
-        self.index = if self.index == 5 { 0 } else { self.index + 1 };
+        self.color = self.color.next();
     }
 
     fn prev_color(&mut self) {
-        self.index = if self.index == 0 { 5 } else { self.index - 1 };
+        self.color = self.color.prev();
     }
 }
 
