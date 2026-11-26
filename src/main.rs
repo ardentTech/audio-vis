@@ -8,12 +8,13 @@ mod curves;
 mod vis;
 
 use core::cell::RefCell;
-use defmt::{debug, unwrap};
+use defmt::{debug, info, unwrap};
 #[allow(unused_imports)]
 use {defmt_rtt as _, panic_probe as _};
 use embassy_executor::Spawner;
 use embassy_rp::adc::{Adc, Async, Channel, Config, InterruptHandler};
 use embassy_rp::{bind_interrupts, clocks, pac, pio, Peri};
+use embassy_rp::aon_timer::{AlarmWakeMode, AonTimer, ClockSource};
 use embassy_rp::gpio::Pull;
 use embassy_rp::interrupt::typelevel::Handler;
 use embassy_rp::peripherals::{DMA_CH0, DMA_CH1, PIO0, PIO1};
@@ -76,6 +77,7 @@ bind_interrupts!(struct Irqs {
     DMA_IRQ_0 => DmaIrqHandler;
     PIO0_IRQ_0 => pio::InterruptHandler<PIO0>;
     PIO1_IRQ_0 => pio::InterruptHandler<PIO1>;
+    POWMAN_IRQ_TIMER => embassy_rp::aon_timer::InterruptHandler;
 });
 
 #[embassy_executor::task]
@@ -179,12 +181,29 @@ async fn orchestration_task() {
 }
 
 #[embassy_executor::task]
-async fn encoder_task(mut encoder: PioEncoder<'static, PIO1, 0>) {
-    // TODO software debounce
+async fn encoder_task(
+    mut encoder: PioEncoder<'static, PIO1, 0>,
+    aon: AonTimer<'static>
+) {
+    let mut last_cw: u64 = 0;
+    let mut last_ccw: u64= 0;
+
     loop {
         match encoder.read().await {
-            Direction::Clockwise => VIS.lock(|v| v.borrow_mut().as_mut().unwrap().next_color() ),
-            Direction::CounterClockwise => VIS.lock(|v| v.borrow_mut().as_mut().unwrap().prev_color() ),
+            Direction::Clockwise => {
+                let now = aon.now();
+                if (now - last_cw) > 500 {
+                    VIS.lock(|v| v.borrow_mut().as_mut().unwrap().next_color());
+                    last_cw = now;
+                }
+            },
+            Direction::CounterClockwise => {
+                let now = aon.now();
+                if (now - last_ccw) > 500 {
+                    VIS.lock(|v| v.borrow_mut().as_mut().unwrap().prev_color());
+                    last_ccw = now;
+                }
+            }
         }
     }
 }
@@ -219,5 +238,16 @@ async fn main(spawner: Spawner) {
     } = Pio::new(p.PIO1, Irqs);
     let prg = PioEncoderProgram::new(&mut common);
     let encoder = PioEncoder::new(&mut common, sm0, p.PIN_16, p.PIN_17, &prg);
-    spawner.spawn(encoder_task(encoder).unwrap());
+
+    // Configure the AON Timer with XOSC at 12 MHz
+    let config = embassy_rp::aon_timer::Config {
+        clock_source: ClockSource::Xosc,
+        clock_freq_khz: 12000,
+        alarm_wake_mode: AlarmWakeMode::WfiOnly,
+    };
+
+    let mut aon = AonTimer::new(p.POWMAN, Irqs, config);
+    aon.set_counter(0);
+    aon.start();
+    spawner.spawn(encoder_task(encoder, aon).unwrap());
 }
