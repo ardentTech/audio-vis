@@ -2,9 +2,9 @@ use embedded_graphics::pixelcolor::Rgb888;
 
 #[derive(Debug, Default)]
 pub(crate) enum Color {
-    #[default]
     Red,
     Yellow,
+    #[default]
     Green,
     Cyan,
     Blue,
@@ -16,10 +16,10 @@ impl Color {
     // TODO need a way to fetch 32 and 64 colors...
     pub(crate) fn data(&self) -> [Rgb888; 32] {
         match self {
-            Color::Red => CYAN_TO_VIOLET,
+            Color::Red => RED_TO_YELLOW_FADE_IN,
             Color::Yellow => YELLOW_FADE_IN_32,
-            Color::Green => GREEN_FADE_IN_32,
-            Color::Cyan => CYAN_FADE_IN_32,
+            Color::Green => CYAN_TO_SPRING_GREEN_FADE_IN,
+            Color::Cyan => CYAN_TO_VIOLET_FADE_IN,
             Color::Blue => BLUE_FADE_IN_32,
             Color::Magenta => MAGENTA_FADE_IN_32,
         }
@@ -120,6 +120,41 @@ pub(crate) static CYAN_FADE_IN_32: [Rgb888; 32] = [
     Rgb888::new(0, SINE_EASE_IN_32[31], SINE_EASE_IN_32[31]),
 ];
 
+pub(crate) static CYAN_TO_SPRING_GREEN_FADE_IN: [Rgb888; 32] = [
+    Rgb888::new(0,6,5),
+    Rgb888::new(0,8,8),
+    Rgb888::new(0,11,10),
+    Rgb888::new(0,15,13),
+    Rgb888::new(1,19,16),
+    Rgb888::new(2,23,19),
+    Rgb888::new(3,28,22),
+    Rgb888::new(4,34,25),
+    Rgb888::new(5,39,28),
+    Rgb888::new(7,46,31),
+    Rgb888::new(8,52,34),
+    Rgb888::new(10,59,37),
+    Rgb888::new(13,66,39),
+    Rgb888::new(16,74,41),
+    Rgb888::new(19,82,43),
+    Rgb888::new(22,91,45),
+    Rgb888::new(26,99,46),
+    Rgb888::new(30,108,47),
+    Rgb888::new(34,117,47),
+    Rgb888::new(39,127,47),
+    Rgb888::new(44,137,46),
+    Rgb888::new(50,147,45),
+    Rgb888::new(56,157,43),
+    Rgb888::new(62,167,41),
+    Rgb888::new(69,178,38),
+    Rgb888::new(76,189,34),
+    Rgb888::new(83,199,30),
+    Rgb888::new(91,210,25),
+    Rgb888::new(99,221,19),
+    Rgb888::new(108,232,13),
+    Rgb888::new(117,243,6),
+    Rgb888::new(127,255,0),
+];
+
 pub(crate) static CYAN_TO_VIOLET: [Rgb888; 32] = [
     //Rgb888::new(0,255,255),
     Rgb888::new(3,247,255),
@@ -153,6 +188,41 @@ pub(crate) static CYAN_TO_VIOLET: [Rgb888; 32] = [
     Rgb888::new(115,23,255),
     Rgb888::new(119,15,255),
     Rgb888::new(123,7,255),
+    Rgb888::new(127,0,255),
+];
+
+pub(crate) static CYAN_TO_VIOLET_FADE_IN: [Rgb888; 32] = [
+    Rgb888::new(0,5,6),
+    Rgb888::new(0,8,8),
+    Rgb888::new(0,10,11),
+    Rgb888::new(0,13,15),
+    Rgb888::new(1,16,19),
+    Rgb888::new(2,19,23),
+    Rgb888::new(3,22,28),
+    Rgb888::new(4,25,34),
+    Rgb888::new(5,28,39),
+    Rgb888::new(7,31,46),
+    Rgb888::new(8,34,52),
+    Rgb888::new(10,37,59),
+    Rgb888::new(13,39,66),
+    Rgb888::new(16,41,74),
+    Rgb888::new(19,43,82),
+    Rgb888::new(22,45,91),
+    Rgb888::new(26,46,99),
+    Rgb888::new(30,47,108),
+    Rgb888::new(34,47,117),
+    Rgb888::new(39,47,127),
+    Rgb888::new(44,46,137),
+    Rgb888::new(50,45,147),
+    Rgb888::new(56,43,157),
+    Rgb888::new(62,41,167),
+    Rgb888::new(69,38,178),
+    Rgb888::new(76,34,189),
+    Rgb888::new(83,30,199),
+    Rgb888::new(91,25,210),
+    Rgb888::new(99,19,221),
+    Rgb888::new(108,13,232),
+    Rgb888::new(117,6,243),
     Rgb888::new(127,0,255),
 ];
 
@@ -263,6 +333,41 @@ pub(crate) static RED_FADE_IN_32: [Rgb888; 32] = [
     Rgb888::new(SINE_EASE_IN_32[29], 0, 0),
     Rgb888::new(SINE_EASE_IN_32[30], 0, 0),
     Rgb888::new(SINE_EASE_IN_32[31], 0, 0),
+];
+
+pub(crate) static RED_TO_YELLOW_FADE_IN: [Rgb888; 32] = [
+    Rgb888::new(6,0,0),
+    Rgb888::new(8,0,0),
+    Rgb888::new(11,1,0),
+    Rgb888::new(15,1,0),
+    Rgb888::new(19,2,0),
+    Rgb888::new(23,4,0),
+    Rgb888::new(28,6,0),
+    Rgb888::new(34,8,0),
+    Rgb888::new(39,11,0),
+    Rgb888::new(46,14,0),
+    Rgb888::new(52,17,0),
+    Rgb888::new(59,22,0),
+    Rgb888::new(66,27,0),
+    Rgb888::new(74,32,0),
+    Rgb888::new(82,38,0),
+    Rgb888::new(91,45,0),
+    Rgb888::new(99,52,0),
+    Rgb888::new(108,60,0),
+    Rgb888::new(117,69,0),
+    Rgb888::new(127,79,0),
+    Rgb888::new(137,89,0),
+    Rgb888::new(147,101,0),
+    Rgb888::new(157,112,0),
+    Rgb888::new(167,125,0),
+    Rgb888::new(178,139,0),
+    Rgb888::new(189,153,0),
+    Rgb888::new(199,168,0),
+    Rgb888::new(210,184,0),
+    Rgb888::new(221,200,0),
+    Rgb888::new(232,218,0),
+    Rgb888::new(243,236,0),
+    Rgb888::new(255,255,0),
 ];
 
 pub(crate) static SPRING_GREEN_FADE_IN_32: [Rgb888; 32] = [
