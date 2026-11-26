@@ -1,7 +1,8 @@
 use embedded_graphics::geometry::Point;
+use embedded_graphics::pixelcolor::Rgb888;
 use microfft::Complex32;
 use crate::ADC_RESOLUTION;
-use crate::color::Color;
+use crate::color::{Color, CYAN_TO_CYAN_FADE_IN, GREEN_TO_CYAN_FADE_IN, RED_TO_CYAN_FADE_IN, YELLOW_TO_CYAN_FADE_IN, BLUE_TO_CYAN_FADE_IN, MAGENTA_TO_CYAN_FADE_IN};
 use crate::display::{Fb, PANEL_HEIGHT, PANEL_WIDTH};
 
 fn calc_amplitudes(samples: [Complex32; PANEL_WIDTH], out_max: i32) -> [u32; PANEL_WIDTH] {
@@ -23,18 +24,39 @@ fn map_range(a: i32, in_min: i32, in_max: i32, out_min: i32, out_max: i32) -> i3
 
 trait MatrixVis<const T: usize> {
     fn draw(&self, fb: &mut Fb, samples: [Complex32; T]);
-    fn next_color(&mut self);
-    fn prev_color(&mut self);
+    fn top_next_color(&mut self);
+    fn top_prev_color(&mut self);
 }
 
 #[derive(Debug)]
 pub(crate) struct FullHeightVis {
-    color: Color
+    top_color: Color,
+    bottom_color: Color,
+    data: [Rgb888; 32]
+}
+
+impl FullHeightVis {
+    fn update_data(&mut self) {
+        self.data = match self.top_color {
+            Color::Red => RED_TO_CYAN_FADE_IN,
+            Color::Yellow => YELLOW_TO_CYAN_FADE_IN,
+            Color::Green => GREEN_TO_CYAN_FADE_IN,
+            Color::Cyan => CYAN_TO_CYAN_FADE_IN,
+            Color::Blue => BLUE_TO_CYAN_FADE_IN,
+            Color::Magenta => MAGENTA_TO_CYAN_FADE_IN,
+        }
+    }
 }
 
 impl Default for FullHeightVis {
     fn default() -> Self {
-        Self { color: Color::default() }
+        let mut vis = Self {
+            top_color: Color::default(),
+            bottom_color: Color::Cyan,
+            data: [Rgb888::new(0, 0, 0); 32]
+        };
+        vis.update_data();
+        vis
     }
 }
 
@@ -46,17 +68,19 @@ impl MatrixVis<PANEL_WIDTH> for FullHeightVis {
         fb.erase();
         for (col, v) in amplitudes.iter().enumerate() {
             for row in 0..*v {
-                fb.set_pixel(Point::new(col as i32, (PANEL_HEIGHT as i32) - (*v - row) as i32), self.color.data()[row as usize]);
+                fb.set_pixel(Point::new(col as i32, (PANEL_HEIGHT as i32) - (*v - row) as i32), self.data[row as usize]);
             }
         }
     }
 
-    fn next_color(&mut self) {
-        self.color = self.color.next();
+    fn top_next_color(&mut self) {
+        self.top_color = self.top_color.next();
+        self.update_data();
     }
 
-    fn prev_color(&mut self) {
-        self.color = self.color.prev();
+    fn top_prev_color(&mut self) {
+        self.top_color = self.top_color.prev();
+        self.update_data();
     }
 }
 
@@ -73,13 +97,13 @@ impl Vis {
 
     pub(crate) fn next_color(&mut self) {
         match self {
-            Vis::FullHeight(vis) => vis.next_color(),
+            Vis::FullHeight(vis) => vis.top_next_color(),
         }
     }
 
     pub(crate) fn prev_color(&mut self) {
         match self {
-            Vis::FullHeight(vis) => vis.prev_color(),
+            Vis::FullHeight(vis) => vis.top_prev_color(),
         }
     }
 }
