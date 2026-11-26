@@ -181,7 +181,7 @@ async fn orchestration_task() {
 }
 
 #[embassy_executor::task]
-async fn encoder_task(
+async fn bottom_encoder_task(
     mut encoder: PioEncoder<'static, PIO1, 0>,
     aon: AonTimer<'static>
 ) {
@@ -193,16 +193,32 @@ async fn encoder_task(
             Direction::Clockwise => {
                 let now = aon.now();
                 if (now - last_cw) > 500 {
-                    VIS.lock(|v| v.borrow_mut().as_mut().unwrap().next_color());
+                    VIS.lock(|v| v.borrow_mut().as_mut().unwrap().next_bottom_color());
                     last_cw = now;
                 }
             },
             Direction::CounterClockwise => {
                 let now = aon.now();
                 if (now - last_ccw) > 500 {
-                    VIS.lock(|v| v.borrow_mut().as_mut().unwrap().prev_color());
+                    VIS.lock(|v| v.borrow_mut().as_mut().unwrap().prev_bottom_color());
                     last_ccw = now;
                 }
+            }
+        }
+    }
+}
+
+#[embassy_executor::task]
+async fn top_encoder_task(
+    mut encoder: PioEncoder<'static, PIO1, 1>,
+) {
+    loop {
+        match encoder.read().await {
+            Direction::Clockwise => {
+                VIS.lock(|v| v.borrow_mut().as_mut().unwrap().next_top_color());
+            },
+            Direction::CounterClockwise => {
+                VIS.lock(|v| v.borrow_mut().as_mut().unwrap().prev_top_color());
             }
         }
     }
@@ -237,7 +253,8 @@ async fn main(spawner: Spawner) {
         mut common, sm0, sm1, ..
     } = Pio::new(p.PIO1, Irqs);
     let prg = PioEncoderProgram::new(&mut common);
-    let encoder = PioEncoder::new(&mut common, sm0, p.PIN_16, p.PIN_17, &prg);
+    let bottom_encoder = PioEncoder::new(&mut common, sm0, p.PIN_16, p.PIN_17, &prg);
+    let top_encoder = PioEncoder::new(&mut common, sm1, p.PIN_18, p.PIN_19, &prg);
 
     // Configure the AON Timer with XOSC at 12 MHz
     let config = embassy_rp::aon_timer::Config {
@@ -249,5 +266,6 @@ async fn main(spawner: Spawner) {
     let mut aon = AonTimer::new(p.POWMAN, Irqs, config);
     aon.set_counter(0);
     aon.start();
-    spawner.spawn(encoder_task(encoder, aon).unwrap());
+    spawner.spawn(bottom_encoder_task(bottom_encoder, aon).unwrap());
+    spawner.spawn(top_encoder_task(top_encoder).unwrap());
 }
