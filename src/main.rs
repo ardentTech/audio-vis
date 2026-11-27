@@ -8,7 +8,7 @@ mod curves;
 mod vis;
 
 use core::cell::RefCell;
-use defmt::{debug, info, unwrap};
+use defmt::{debug, unwrap};
 #[allow(unused_imports)]
 use {defmt_rtt as _, panic_probe as _};
 use embassy_executor::Spawner;

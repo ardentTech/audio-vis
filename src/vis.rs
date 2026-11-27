@@ -1,5 +1,5 @@
 use embedded_graphics::geometry::Point;
-use embedded_graphics::pixelcolor::Rgb888;
+use enum_iterator::{Sequence, next_cycle, previous_cycle};
 use microfft::Complex32;
 use crate::ADC_RESOLUTION;
 use crate::color::{Color, LINEAR_INTERPOLATION};
@@ -60,19 +60,19 @@ impl MatrixVis<PANEL_WIDTH> for FullHeightVis {
     }
 
     fn next_bottom_color(&mut self) {
-        self.bottom_color = self.bottom_color.next();
+        self.bottom_color = next_cycle(&self.bottom_color);
     }
 
     fn prev_bottom_color(&mut self) {
-        self.bottom_color = self.bottom_color.prev();
+        self.bottom_color = previous_cycle(&self.bottom_color);
     }
 
     fn next_top_color(&mut self) {
-        self.top_color = self.top_color.next();
+        self.top_color = next_cycle(&self.top_color);
     }
 
     fn prev_top_color(&mut self) {
-        self.top_color = self.top_color.prev();
+        self.top_color = previous_cycle(&self.top_color);
     }
 }
 
