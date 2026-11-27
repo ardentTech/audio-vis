@@ -6,6 +6,7 @@ mod color;
 mod patterns;
 mod curves;
 mod vis;
+mod colors;
 
 use core::cell::RefCell;
 use defmt::{debug, unwrap};
